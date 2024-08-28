@@ -6,5 +6,7 @@ include_directories(.)
 
 add_executable(baja_sim
 src/main.cpp
-src/cvt.cpp
+src/util.cpp
 )
+
+set_property(TARGET baja_sim PROPERTY CXX_STANDARD 20)

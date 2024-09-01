@@ -1,0 +1,9 @@
+- Check belt stretch using E and max tension force (napkin math) to verify the constant length assumption
+- Obtain static and kinetic friction coefficient of belt on sheaves
+    - Napkin math
+    - Check paper cited by WVU
+    - Estimate from CVT data before belt obviously bites
+        - Car inches forward
+- Update WVU code to reflect current parameters
+    - New engine
+    - CVT tune

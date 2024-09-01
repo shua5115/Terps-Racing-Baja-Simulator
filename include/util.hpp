@@ -2,10 +2,15 @@
 
 #include "Eigen/Dense"
 
+#define PI        (3.1415926535897932384626434)
 #define DEG2RAD   (0.0174532925199432957692369)
 #define RAD2DEG   (57.295779513082320876798155)
 #define RPM2RADPS (0.1047197551196597746154214)
-#define IN2M (0.0254)
+#define RADPS2RPM (9.5492965855137201461330300)
+#define IN2M      (0.0254)
+#define LBF2N     (4.4482216153)
+#define SLUG2KG   (14.593902937)
+#define LBF2KG    (0.45359236844386) // ONLY use for weight under earth's gravity
 
 constexpr inline double lerp(double a, double b, double t) {
     return a*(1.0-t) + b*t;
@@ -19,6 +24,7 @@ constexpr inline double remap(double v, double a1, double b1, double a2, double 
     return lerp(a2, b2, invlerp(a1, b1, v));
 }
 
+// hack to make std::sort works
 namespace Eigen {
     template<class T>
     void swap(T&& a, T&& b){
@@ -39,3 +45,21 @@ inline void matrix_sort_cols(Eigen::MatrixXd mat, Eigen::Index row) {
 // 1-d linear interpolation lookup
 // Matrix should have first column sorted in increasing order
 double matrix_linear_lookup(Eigen::MatrixX2d mat, double val, bool extrapolate = false);
+
+// Finds the slope of an arbitrary 1-D function at input x numerically using two-sided finite difference.
+inline double slope(double(*f)(double), double x, double step=0.00001) {
+    return (f(x+step) - f(x-step))*0.5/(step);
+}
+
+// Finds the y value of a circle with radius r tangent to an unknown function f at location x.
+// Useful for calculating roller height on a ramp.
+double circle_trace(double(*f)(double), double x, double r);
+
+
+inline double taut_tension_from_slack_tension(double slack_tension, double wrap_angle, double mu_e) {
+    return slack_tension*exp(mu_e*wrap_angle);
+}
+
+inline double slack_tension_from_taut_tension(double taut_tension, double wrap_angle, double mu_e) {
+    return taut_tension/exp(mu_e*wrap_angle);
+}

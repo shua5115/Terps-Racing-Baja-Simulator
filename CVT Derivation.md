@@ -47,7 +47,8 @@ $\theta_{helix}$ | rad | Angle of the secondary helix ramp
 ### Variables
 Name|Unit|Description
 ---|:---:|---:
-$\tau$ | N-m | torque load on the secondary
+$\tau_s$ | N-m | torque load on the secondary
+$\tau_p$ | N-m | torque load on the primary
 $\omega_p$ | rad/s | angular velocity of primary
 $\omega_s$ | rad/s | angular velocity of secondary
 $r_p$ | m | pulley radius of primary

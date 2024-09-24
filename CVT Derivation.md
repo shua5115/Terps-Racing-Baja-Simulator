@@ -65,6 +65,31 @@ $T_0 = \frac{2\sin(\frac{\beta}{2})*[2F_{clamp}\tan(\frac{\phi}{2})] + \frac{m_b
 $T_1 = T_0 e^{\mu_e\beta}$ | N | Taut side tension force derived from slack side tension, applicable for primary and secondary
 $F_{clamp,s} = \frac{1}{\beta}[k_s*(x_{0s} + x_s) + \frac{1}{2\tan(\theta_{helix})}(\kappa_s*(\gamma_s + \theta_s) + \tau/r_{helix})]$ | N | Clamping force at secondary
 
+## FBDs
+(optional) Overall (engine, gearcase input shaft)
+
+Primary sheaves (belt replaced with tension forces)
+
+Secondary sheaves (vice versa)
+
+Primary internals (shaft, rollers, linkages, flyweights, spring, sheaves)
+
+Secondary internals (shaft, rollers, helix ramp, spring, sheaves)
+
+
+Assumptions
+- Constant temperature (no effects of temp on friction or size of objects)
+- Engine torque scales linearly with throttle
+
+Time-Dependent Variables
+- Primary w
+- Secondary w
+- Primary sheave displacement
+- Secondary sheave displacement
+- Belt length?
+- Torque at primary
+- Torque at secondary
+
 ## Equations
 
 Taut side tension equivalent between primary and secondary:

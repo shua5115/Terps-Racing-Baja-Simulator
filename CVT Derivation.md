@@ -74,6 +74,24 @@ Primary sheaves (belt replaced with tension forces)
 Secondary sheaves (vice versa)
 
 Primary internals (shaft, rollers, linkages, flyweights, spring, sheaves)
+![image](Primary%20Internals%20FBD.png)
+![image](Primary%20Flyweight%20FBD.png)
+![image](Simple%20Belt%20FBD.png)
+F_sheave depends on the sum of belt tensions:
+
+$R = N\sin(\phi/2)$ where R is a vertical force due to tension, and $\phi$ is the V angle. 
+
+$N = F_{sheave}/\cos(\phi/2)$
+
+$R = F_{sheave}\frac{\sin(\phi/2)}{\cos(\phi)} = F_{sheave}\tan(\phi/2)$
+
+$F_{sheave} = R/\tan(\phi/2)$
+
+R results from a distributed load of belt tension. From the Bestorq belt theory reference:
+
+$R = T_0 \alpha$, where $T_0$ is the slack-side tension and $\alpha$ is the wrap angle around the sheave ($\alpha$ for primary, $\beta$ for secondary)
+
+$F_{sheave} = T_0 \alpha/\tan(\phi/2)$
 
 Secondary internals (shaft, rollers, helix ramp, spring, sheaves)
 

@@ -123,19 +123,23 @@ $y_1 = L_1\sin(\theta_1)$
 
 $x_2 = x_0 - d$
 
-$x_2 = x_1 + L_2\cos(\theta_2)$
+$x_2 = x_1 + L_2\cos(\theta_1+\theta_2)$
 
 $y_2 = r_{cage} - ramp(d)$
 
-$y_2 = y_1 + L_2\sin(\theta_2)$
+$y_2 = y_1 + L_2\sin(\theta_1+\theta_2)$
 
 $\theta_1 + \theta_2 = \arctan(ramp'(d)) + \frac{\pi}{2}$ where $ramp'(x) = \frac{d}{dx}ramp(x)$
 
-With these 7 equations, we can in theory solve for every variable, but try as I might, I can't reach an analytic solution. This is mostly due to ramp(x) not being a known function. So, this nonlinear system must be solved numerically. It can be simplified to this system of 3 equations where the variables are $d, \theta_1, \theta_2$:
+With these 7 equations, we can in theory solve for every variable, but try as I might, I can't reach an analytic solution. This is mostly due to ramp(x) not being a known function. So, this nonlinear system must be solved numerically. It can be simplified to this system of 3 equations where the variables are $d, \theta_R, \theta_N$:
 
-eq1: $L_1*\cos(\theta_1) + L_2*\cos(\theta_2) - x_0 + d$
-eq2: $L_1*\sin(\theta_1) + L_2*\sin(\theta_2) - r_{cage} + ramp(d)$
-eq3: $\arctan(ramp'(d)) + \pi/2 - \theta_1 - \theta_2$
+$\theta_R = \theta_1$
+
+$\theta_N = \theta_1 + \theta_2$
+
+eq1: $L_1*\cos(\theta_R) + L_2*\cos(\theta_N) - x_0 + d$
+eq2: $L_1*\sin(\theta_R) + L_2*\sin(\theta_N) - r_{cage} + ramp(d)$
+eq3: $\arctan(ramp'(d)) + \pi/2 - \theta_N$
 
 Where each equation is set equal to 0.
 
@@ -143,13 +147,9 @@ The penalty method can be used, where penalty is minimized:
 
 $E = eq_1^2 + eq_2^2 + eq_3^2$
 
-Bounds need to be placed on $\theta_1$ and $\theta_2$ such that they remain in the range $[-\pi,\pi]$, otherwise the numerical solver may not converge and floating point precision can be lost.
+Bounds need to be placed on $\theta_R$ and $\theta_N$ such that they remain in the range $[-\pi,\pi]$, otherwise the numerical solver may not converge due to the symmetry of angles.
 
-Once the linkage geometry is known, we can apply the geometry to the roller FBD:
-
-$\theta_R = \theta_1$
-
-$\theta_N = \theta_1 + \theta_2$
+The next step is to solve for the forces of the system:
 
 To find the reaction force $R_x$, we need to use the centripetal force due to rotation of the primary.
 

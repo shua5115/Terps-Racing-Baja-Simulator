@@ -130,23 +130,49 @@ $\theta_s = \frac{d_s}{r_{helix} \tan(\theta_{helix})}$
 
 Note: symbols in the figure differ from those used in this document, and their $\phi$ is used as the full V-angle.
 
-$F_{sheave}$ depends on belt tension and sheave geometry:
+$F_b$ depends on belt tension and sheave geometry:
 
 $R = N\sin(\phi)$ where R is a vertical force due to tension, and $\phi$ is half the V angle. 
 
-$N = F_{sheave}/\cos(\phi)$
+$N = F_b/\cos(\phi)$
 
-$R = F_{sheave}\frac{\sin(\phi)}{\cos(\phi)} = F_{sheave}\tan(\phi)$
+$R = F_b\frac{\sin(\phi)}{\cos(\phi)} = F_b\tan(\phi)$
 
-$F_{sheave} = R/\tan(\phi)$
+$F_b = R/\tan(\phi)$
 
-R results from both slack and taut belt tension.
+R results from slack belt tension and wrap angle
 
-$R = -(T_0 + T_1) \cos(\alpha)$ Replace $\alpha$ with $\beta$ for secondary
+$R = T_0e^{\mu A}$ Replace $A$ with $\alpha$ for primary or $\beta$ for secondary
 
-$F_{bp} = -(T_0 + T_1) \cos(\alpha)/\tan(\phi)$
+$F_{bp} = T_0e^{\mu\alpha}/\tan(\phi)$
 
-$F_{bs} = -(T_0 + T_1) \cos(\beta)/\tan(\phi)$
+$F_{bs} = T_0e^{\mu\beta}/\tan(\phi)$
+
+
+# Derivation of R
+
+![Belt Section FBD](figures/Belt%20Slice%20FBD.png)
+
+(Bestorq)
+
+R is the total axial force applied to the sheaves by the belt.
+
+According to Belt Theory, each point along the contact area
+increases tension from the slack side to the taut side by $\mu R$ Newtons.
+
+$dR = T(\theta)d\theta$
+
+$T(\theta) = T_0e^{\mu\theta}$
+
+$dR = T_0e^{\mu\theta}d\theta$
+
+Integrating from 0 to wrap angle $A$:
+
+$R = \int_0^A{T_0e^{\mu\theta}d\theta}$
+
+$R = T_0\int_0^A{e^{\mu\theta}d\theta}$
+
+$R = T_0e^{\mu A}$ replace $A$ with $\alpha$ for primary or $\beta$ for secondary
 
 
 # Derivation of $\theta_1, \theta_2, d_p$
@@ -297,6 +323,11 @@ $k_s d_s + \frac{d_s \kappa_s}{(r_{helix}\tan(\theta_{helix}))^2} = -k_s d_{0s} 
 $d_s (k_s + \frac{\kappa_s}{(r_{helix}\tan(\theta_{helix}))^2}) = -k_s d_{0s} + F_{bs} - \frac{\theta_{0s} \kappa_s}{r_{helix}\tan(\theta_{helix})}$
 
 $d_s = (-k_s d_{0s} + F_{bs} - \frac{\theta_{0s} \kappa_s}{r_{helix}\tan(\theta_{helix})})/(k_s + \frac{\kappa_s}{(r_{helix}\tan(\theta_{helix}))^2})$ Note how all the units work out to (N)/(N/m)
+
+
+# Derivation of Belt Tension
+
+Belt tension
 
 
 # References

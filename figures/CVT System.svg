@@ -24,15 +24,15 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="1.5556349"
-     inkscape:cx="532.57998"
-     inkscape:cy="448.6914"
+     inkscape:zoom="3.1112698"
+     inkscape:cx="399.67604"
+     inkscape:cy="522.29479"
      inkscape:window-width="2880"
      inkscape:window-height="1580"
      inkscape:window-x="-12"
      inkscape:window-y="-12"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer3" />
+     inkscape:current-layer="layer2" />
   <defs
      id="defs1">
     <marker
@@ -1097,14 +1097,14 @@
     <text
        xml:space="preserve"
        style="font-size:2.82222px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.600001, 0.600001;stroke-dashoffset:0;stroke-opacity:1"
-       x="58.94429"
-       y="142.646"
+       x="59.70966"
+       y="141.11478"
        id="text28"><tspan
          sodipodi:role="line"
          id="tspan28"
          style="font-size:2.82222px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2"
-         x="58.94429"
-         y="142.646">r_fly</tspan></text>
+         x="59.70966"
+         y="141.11478">r_fly</tspan></text>
     <path
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.199999;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.599997, 0.599997;stroke-dashoffset:0;stroke-opacity:1"
        d="M 83.381322,150.22654 H 69.454687"
@@ -1585,14 +1585,19 @@
     <text
        xml:space="preserve"
        style="font-size:2.82223px;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.4;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       x="59.426323"
-       y="148.4277"
+       x="63.543911"
+       y="144.89992"
        id="text111"><tspan
          sodipodi:role="line"
          id="tspan111"
          style="fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.4"
-         x="59.426323"
-         y="148.4277">4*F_flyarm</tspan></text>
+         x="63.543911"
+         y="144.89992">N_fly*</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.4"
+         x="63.543911"
+         y="148.4277"
+         id="tspan1">F_flyarm</tspan></text>
     <path
        style="fill:none;fill-opacity:1;stroke:#ff0101;stroke-width:0.4;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#marker111)"
        d="m 64.103099,168.02795 h 10.11881"

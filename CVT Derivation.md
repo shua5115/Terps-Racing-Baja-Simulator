@@ -3,11 +3,16 @@
 ![Full FBD](figures/CVT%20System.svg)
 
 # Assumptions
-- Constant temperature (no thermal expansion or effects on friction)
+- Constant temperature (no thermal expansion, friction coefficient of belt is constant)
 - Engine torque scales linearly with throttle
-- Forces and moments internal to primary and secondary subsystems are assumed to be quasi-static
-    - Justification: shifting occurs over a longer time period than the acceleration of the vehicle itself
-    - Impact: shift ratio at any given moment in time is independent of any momentum (except for flyweights), and is fully dependent on the position of components.
+- Forces and moments related to the CVT ratio are assumed to be quasi-static
+    - Justification: shifting occurs at a slower rate than the acceleration of the vehicle itself
+    - Benefit: shift ratio is independent of time, only on position and velocity at the current instant
+    - Drawback: response of shift ratio deviates from reality, which is not quasi-static
+    - True reason: this system would be extremely difficult to model without this assumption
+- Friction between certain CVT components are considered negligible
+    - Rollers on ramps/helix
+    - Friction of sheaves moving during shift
 
 # Constants
 Name|Unit|Description
@@ -25,6 +30,7 @@ $E_b$ | Pa | Young's modulus of belt
 $G_b$ | Pa | Shear modulus of belt
 $\mu_b$ | none | Coefficient of friction of belt with sheaves
 $N_g$ | none | Fixed gear ratio between the secondary and the wheels
+$N_fly$ | none | Number of flyweight linkages in primary
 $I_e$ | kg-m^2 | Total moment of inertia of spinning engine components
 $I_p$ | kg-m^2 | Total moment of inertia of primary components with constant inertia values
 $I_s$ | kg-m^2 | Total moment of inertia of secondary components with constant inertia values
@@ -70,12 +76,12 @@ $\omega_s$ | rad/s | Angular velocity of secondary
 $r_p$ | m | Pulley radius of primary
 $r_s$ | m | Pulley radius of secondary
 **Primary Subsystem**
-$d_p$ | m | Linear displacement of primary sheave and spring during shift, range $[0,d_{p,max}]$, initially 0
+$d_p$ | m | Linear displacement of primary sheave during shift, range $[0,d_{p,max}]$, initially 0
 $d_r$ | m | Linear displacement of roller from innermost edge of ramp
 $\theta_1$ | rad | Angle between flyweight arm and primary axis
 $\theta_2$ | rad | Angle between primary ramp surface normal at roller contact point and primary axis
 **Secondary Subsystem**
-$d_s$ | m | Linear displacement of secondary spring during shift, range $[0,d_{s,max}]$, initially 0
+$d_s$ | m | Linear displacement of secondary sheave during shift, range $[0,d_{s,max}]$, initially 0
 
 
 # Derived Variables
@@ -118,9 +124,15 @@ $\theta_s = \frac{d_s}{r_{helix} \tan(\theta_{helix})}$
 
 # Derivation of $F_b$
 
+![Belt Cross-Section FBD](figures/Belt%20FBD.png)
+
+(Skinner, 2020)
+
+Note: symbols in the figure differ from those used in this document, and their $\phi$ is used as the full V-angle.
+
 $F_{sheave}$ depends on belt tension and sheave geometry:
 
-$R = N\sin(\phi)$ where R is a vertical force due to tension, and $\phi$ is the V angle. 
+$R = N\sin(\phi)$ where R is a vertical force due to tension, and $\phi$ is half the V angle. 
 
 $N = F_{sheave}/\cos(\phi)$
 
@@ -145,13 +157,13 @@ The reaction force from the flyweight arm must be determined using kinematics. T
 
 An important note is that the ramp is defined by an arbitrary function, ramp(d), which returns a height from the base of the ramp. It is assumed that any result of this function will have the two-bar linkage in an "elbow-up" state, as shown in the figure. This is true if the slope of the ramp() function is always negative.
 
-Solving this system is not trivial, since the arbitrary function $ramp(d)$ depends on the unknown $d$, which prevents the system from being analytically solvable.
+Solving this system is not trivial, since the function $ramp(d)$ is arbitrary. It means that the equations involving it cannot isolate its arguments, since the function is not known to be invertable.
 
 Free variables (7): $x_1, y_1, x_2, y_2, \theta_1, \theta_2, d_r$
 
 Knowns: $L_1, L_2, x_{ramp}, d_p, r_{cage}, r_{shldr}$ (Note: $L_1 = L_{arm}$ and $L_2 = r_{roller}$)
 
-Arbitrary: $ramp(), ramp'()$ where $ramp'() < 0$
+Arbitrary: $ramp(), ramp'()$
 
 $x_1 = L_1\cos(\theta_1)$
 
@@ -167,7 +179,7 @@ $y_2 = y_1 + L_2\sin(\theta_2)$
 
 $\theta_2 = \arctan(ramp'(d_r - L_2\cos(\theta_2))) + \pi/2$ where $ramp'(x) = \frac{d}{dx}ramp(x)$
 
-With these 7 equations, we could in theory solve for every variable, if $ramp(x)$ was a defined function of x.
+With these 7 equations, we could in theory solve for every variable, if $ramp(x)$ wasn't arbitrary.
 This nonlinear system must be solved numerically.
 It can be simplified to this system of 3 equations where the variables are $d_r, \theta_1, \theta_2$:
 
@@ -243,15 +255,15 @@ $F_{flyarm} = \frac{0.25 m_{fly}(r_{shldr} + L_{arm}\sin(\theta_1))\omega_p^2 L_
 
 # Derivation of $d_p$
 
-$\sum{F_x} = 0 = F_{sp} + F_{bp} - F_{flyarm}$
+$\sum{F_x} = 0 = F_{sp} + F_{bp} - N_fly F_{flyarm}$
 
 Expand values which depend on $d_p$:
 
-$0 = k_p (d_{0p} + d_p) + F_{bp} - F_{flyarm}$
+$0 = k_p (d_{0p} + d_p) + F_{bp} - N_fly F_{flyarm}$
 
-$k_p (d_{0p} + d_p) = F_{flyarm} - F_{bp}$
+$k_p (d_{0p} + d_p) = 4F_{flyarm} - F_{bp}$
 
-$d_p = (F_{flyarm} - F_{bp})/k_p - d_{0p}$
+$d_p = (N_fly F_{flyarm} - F_{bp})/k_p - d_{0p}$
 
 
 # Derivation of $d_s$

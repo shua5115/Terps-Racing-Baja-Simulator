@@ -73,8 +73,6 @@ $\tau_s$ | N-m | Torque load on the secondary
 $\tau_p$ | N-m | Torque load on the primary
 $\omega_p$ | rad/s | Angular velocity of primary
 $\omega_s$ | rad/s | Angular velocity of secondary
-$r_p$ | m | Pulley radius of primary
-$r_s$ | m | Pulley radius of secondary
 **Primary Subsystem**
 $d_p$ | m | Linear displacement of primary sheave during shift, range $[0,d_{p,max}]$, initially 0
 $d_r$ | m | Linear displacement of roller from innermost edge of ramp
@@ -87,6 +85,8 @@ $d_s$ | m | Linear displacement of secondary sheave during shift, range $[0,d_{s
 # Derived Variables
 Formula|Unit|Description
 ---|:---:|---:
+$r_p = d_p/\tan(\phi) + r_{absmin,p}$ | m | Pulley radius of primary
+$r_s = (d_{s,max} - d_s)/\tan(\phi) + r_{absmin,s}$ | m | Pulley radius of secondary
 $\alpha = 2\arccos(\frac{r_s-r_p}{L})$ | rad | Belt wrap angle around primary
 $\beta = 2\arccos(\frac{r_p-r_s}{L})$  | rad | Belt wrap angle around secondary
 $\theta_s = \frac{d_s}{r_{helix}\tan(\theta_{helix})}$ | rad | Angular twist of secondary spring during shift, range $[0,\theta_{s,max}]$
@@ -107,6 +107,11 @@ $F_{flyarm} = \frac{0.25 m_{fly}(r_{shldr} + L_{arm}\sin(\theta_1))\omega_p^2 L_
 $F_{ss} = k_s (d_{0s} + d_s)$ | Force from linear secondary spring
 $F_{bs} = -(T_0 + T_1) \cos(\beta)/\tan(\phi)$ | Force from belt
 $T_{ss} = \kappa_s (\theta_{0s} + \theta_s)$ | Torque from torsional secondary spring
+
+
+# Derivation of $r_p, r_s$
+
+![Sheave Diagram](figures/belt%20on%20sheave.svg)
 
 
 # Derivation of $\theta_s$
@@ -132,7 +137,7 @@ Note: symbols in the figure differ from those used in this document, and their $
 
 $F_b$ depends on belt tension and sheave geometry:
 
-$R = N\sin(\phi)$ where R is a vertical force due to tension, and $\phi$ is half the V angle. 
+$R = N\sin(\phi)$ where R is a vertical force due to tension, and $\phi$ is half the V angle.
 
 $N = F_b/\cos(\phi)$
 

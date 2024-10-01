@@ -30,7 +30,7 @@ $E_b$ | Pa | Young's modulus of belt
 $G_b$ | Pa | Shear modulus of belt
 $\mu_b$ | none | Coefficient of friction of belt with sheaves
 $N_g$ | none | Fixed gear ratio between the secondary and the wheels
-$N_fly$ | none | Number of flyweight linkages in primary
+$N_{fly}$ | none | Number of flyweight linkages in primary
 $I_e$ | kg-m^2 | Total moment of inertia of spinning engine components
 $I_p$ | kg-m^2 | Total moment of inertia of primary components with constant inertia values
 $I_s$ | kg-m^2 | Total moment of inertia of secondary components with constant inertia values
@@ -101,11 +101,11 @@ Formula | Description
 ---|---:
 **Primary Subsystem**
 $F_{sp} = k_p (d_{0p} + d_p)$ | Force from linear primary spring
-$F_{bp} = -(T_0 + T_1) \cos(\alpha)/\tan(\phi)$ | Force from belt
+$F_{bp} = T_0e^{\mu\alpha}/\tan(\phi)$ | Force from belt
 $F_{flyarm} = \frac{0.25 m_{fly}(r_{shldr} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$ | Force from flyweights and ramp
 **Secondary Subsystem**
 $F_{ss} = k_s (d_{0s} + d_s)$ | Force from linear secondary spring
-$F_{bs} = -(T_0 + T_1) \cos(\beta)/\tan(\phi)$ | Force from belt
+$F_{bs} = T_0e^{\mu\beta}/\tan(\phi)$ | Force from belt
 $T_{ss} = \kappa_s (\theta_{0s} + \theta_s)$ | Torque from torsional secondary spring
 
 

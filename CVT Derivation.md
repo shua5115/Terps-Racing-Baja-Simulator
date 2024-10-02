@@ -127,23 +127,98 @@ $\theta_s r_{helix} \tan(\theta_{helix}) = d_s$
 $\theta_s = \frac{d_s}{r_{helix} \tan(\theta_{helix})}$
 
 
-# Derivation of $F_b$
+# Derivation of $F_b$ vs Tension
 
 ![Belt Cross-Section FBD](figures/Belt%20FBD.png)
 
 (Skinner, 2020)
 
+![Belt Section FBD](figures/Belt%20Slice%20FBD.png)
+
+(Bestorq)
+
 Note: symbols in the figure differ from those used in this document, and their $\phi$ is used as the full V-angle.
 
 $F_b$ depends on belt tension and sheave geometry:
 
-$R = N\sin(\phi)$ where R is a vertical force due to tension, and $\phi$ is half the V angle.
-
-$N = F_b/\cos(\phi)$
-
-$R = F_b\frac{\sin(\phi)}{\cos(\phi)} = F_b\tan(\phi)$
-
 $F_b = R/\tan(\phi)$
+
+$R = F_b\tan(\phi)$ where R is a radial force on the sheave due to belt tension, and $\phi$ is half the V angle.
+
+$N = F_b/\cos(\phi) = R/\sin(\phi)$
+
+$R = N\sin(\phi)$
+
+If the sheave is not slipping, then the static friction condition holds:
+
+$F_f \le F_{f,max} = \mu N$, and $F_f$ is like a reaction force.
+This reaction force is applied at every point along the belt contact surface. If the total moment from these reaction forces is balanced with the applied torque on the sheave and belt tension, then we can solve for F_f and verify that the static friction condition holds.
+
+Taking sum of forces along the tangential and radial directions for a small slice of the belt contact area:
+
+$\sum{F_{tangential}} = 0 = (-T) + (T + dT) - F_f$
+
+$dT = F_f$
+
+Applying small angle approximations:
+
+$\sum{F_{radial}} = 0 = T d\theta + dT d\theta/2 - dR$
+
+$dR = T d\theta + dT/2 d\theta$
+
+Assuming that dT/2 is very small, approximately:
+
+$dR = T d\theta$
+
+$dN\sin(\phi) = T d\theta$
+
+$\frac{dN}{d\theta} = T/\sin(\phi)$
+
+Assuming that $T(\theta)$ is in the form of an exponential:
+
+$T(\theta) = e^{C\theta} + Q$ where $T(0) = T_0$ and $T(\alpha) = T_1$
+
+$Q = T_0 - 1$
+
+$C = \frac{\ln(T_1-T_0+1)}{\alpha}$
+
+$T(\theta) = (T_1 - T_0 + 1)^{\theta/\alpha} - 1 + T_0$
+
+$\sin(\phi) \frac{dN}{d\theta} = (T_1 - T_0 + 1)^{\theta/\alpha} - 1 + T_0$
+
+Integrating both sides wrt $d\theta$
+
+$N \sin(\phi) = \int_0^\alpha{((T_1 - T_0 + 1)^{\theta/\alpha} - 1 + T_0) d\theta}$
+
+$= \int_0^\alpha{((T_1 - T_0 + 1)^{\theta/\alpha}) d\theta} - \alpha(T_0 - 1)$
+
+$= \int_0^\alpha{(e^{\ln(T_1 - T_0 + 1)\theta/\alpha}) d\theta} - \alpha(T_0 - 1)$
+
+$= \frac{\alpha}{\ln(T_1 - T_0 + 1)} [e^{\ln(T_1 - T_0 + 1)\theta/\alpha}]_0^\alpha - \alpha(T_0 - 1)$
+
+$= \frac{\alpha}{\ln(T_1 - T_0 + 1)} (e^{\ln(T_1 - T_0 + 1)} - 1) - \alpha(T_0 - 1)$
+
+$= \frac{\alpha(T_1 - T_0)}{\ln(T_1 - T_0 + 1)} - \alpha(T_0 - 1)$
+
+Using the fact that all torques must cancel:
+
+$T_1 - T_0 = \tau/r$, where $\tau$ is an applied torque and $r$ is the current radius
+
+$N \sin(\phi) = \frac{\alpha(\tau/r)}{\ln(\tau/r + 1)} - \alpha(T_0 - 1)$
+
+$N = \frac{\alpha(\tau/r)}{\sin(\phi)\ln(\tau/r + 1)} - \frac{\alpha}{\sin(\phi)}(T_0 - 1)$
+
+This gives us a relationship between slack side tension force and the normal force.
+
+Once we can determine $T_0$, the rest of the system falls into place.
+
+If the friction "reaction" force $F_f > \mu N$, then:
+
+$F_f = \mu N$
+
+And this is the applied moment to the sheave.
+
+
 
 R results from slack belt tension and wrap angle
 

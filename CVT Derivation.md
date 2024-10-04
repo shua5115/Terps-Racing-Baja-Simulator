@@ -13,6 +13,7 @@
 - Friction between certain CVT components are considered negligible
     - Rollers on ramps/helix
     - Friction of sheaves moving during shift
+- Belt never slips on secondary sheave
 
 # Constants
 Name|Unit|Description
@@ -22,7 +23,7 @@ $r_{absmin,p}$ | m | Inner radius of primary, bottom of where sheaves touch
 $r_{absmin,s}$ | m | Inner radius of secondary, bottom of where sheaves touch
 $\phi$ | rad | Half of the angle between sheaves (also applies to belt V-shape)
 $L$ | m | Center to center distance between primary and secondary
-$L_b$ | m | Belt length
+$L_{b0}$ | m | Unstretched belt length
 $b$ | m | Average width of belt V-shaped section
 $A_b$ | m^2 | Belt cross sectional area
 $m_b$ | kg | Total mass of belt
@@ -61,7 +62,7 @@ $r_{helix}$ | m | Radius of secondary helix ramp
 # Derived Constants
 Formula|Unit|Description
 ---|:---:|---:
-$\mu_e=\mu_b/\sin(\phi)$ | none | Effective friction coefficient between belt and sheaves
+$\rho_b = \frac{m_b}{A_b L_{b0}}$ | kg/m^3 | Density of the belt
 $\theta_{s,max} = \frac{d_{s,max}}{r_{helix}\tan(\theta_{helix})}$ | rad | Max angular displacement of secondary sheave and torsional spring
 
 
@@ -73,13 +74,16 @@ $\tau_s$ | N-m | Torque load on the secondary
 $\tau_p$ | N-m | Torque load on the primary
 $\omega_p$ | rad/s | Angular velocity of primary
 $\omega_s$ | rad/s | Angular velocity of secondary
+$T_0$ | N | Slack-side belt tension (quasi-static)
+$T_1$ | N | Taut-side belt tension (quasi-static)
+$L_b$ | m | Current belt length (quasi-static)
 **Primary Subsystem**
-$d_p$ | m | Linear displacement of primary sheave during shift, range $[0,d_{p,max}]$, initially 0
-$d_r$ | m | Linear displacement of roller from innermost edge of ramp
-$\theta_1$ | rad | Angle between flyweight arm and primary axis
-$\theta_2$ | rad | Angle between primary ramp surface normal at roller contact point and primary axis
+$d_p$ | m | Linear displacement of primary sheave during shift, range $[0,d_{p,max}]$, initially 0 (quasi-static)
+$d_r$ | m | Linear displacement of roller from innermost edge of ramp (quasi-static)
+$\theta_1$ | rad | Angle between flyweight arm and primary axis (quasi-static)
+$\theta_2$ | rad | Angle between primary ramp surface normal at roller contact point and primary axis (quasi-static)
 **Secondary Subsystem**
-$d_s$ | m | Linear displacement of secondary sheave during shift, range $[0,d_{s,max}]$, initially 0
+$d_s$ | m | Linear displacement of secondary sheave during shift, range $[0,d_{s,max}]$, initially 0 (quasi-static)
 
 
 # Derived Variables
@@ -94,19 +98,28 @@ $r_{fly} = r_{shldr} + L_{arm} \sin(\theta_1)$ | m | Distance from flyweight to 
 $\theta_1 =$ solve numerically | rad | Angle of flyweight arm from primary axis
 $\theta_2 =$ solve numerically | rad | Angle of surface normal of primary ramp at roller contact point
 $d_r =$ solve numerically | m | Displacement of roller from rightmost edge of ramp
+$F_f = \tau_p/r_p + \tau_s/r_s$ | N | Friction force at primary, assuming no slip
+$N_p = \frac{\alpha(F_f)}{\sin(\phi)\ln(F_f + 1)} - \frac{\alpha}{\sin(\phi)}(T_0 - 1)$ | N | Net normal force applied to belt surface at primary
 
 
-# Subsystem Forces and Moments
+# Forces and Moments
 Formula | Description
 ---|---:
+$F_f \le N_p \mu_b$ | No-slip condition
+$T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$ | Slack side tension
+$F_f = T_1 - T_0 = \tau_p/r_p + \tau_s/r_s$ | Relation between slack and taut tension under no-slip condition
+$F_f = T_1 - T_0 = \mu_b N_p + \tau_s/r_s$ | Relation between slack and taut tension under slipping condition
 **Primary Subsystem**
 $F_{sp} = k_p (d_{0p} + d_p)$ | Force from linear primary spring
-$F_{bp} = T_0e^{\mu\alpha}/\tan(\phi)$ | Force from belt
+$F_{bp} = \frac{\alpha(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\alpha}{\tan(\phi)}(T_0 - 1)$ | Force from belt
 $F_{flyarm} = \frac{0.25 m_{fly}(r_{shldr} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$ | Force from flyweights and ramp
 **Secondary Subsystem**
 $F_{ss} = k_s (d_{0s} + d_s)$ | Force from linear secondary spring
-$F_{bs} = T_0e^{\mu\beta}/\tan(\phi)$ | Force from belt
+$F_{bs} = \frac{\beta(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\beta}{\tan(\phi)}(T_0 - 1)$ | Force from belt
 $T_{ss} = \kappa_s (\theta_{0s} + \theta_s)$ | Torque from torsional secondary spring
+**Belt Drive**
+$\tau_{ps} = \tau_p \frac{r_s}{r_p}$ | Torque applied to secondary from primary
+$M_s = \tau_{ps} - \tau_s$ | Net moment applied to secondary
 
 
 # Derivation of $r_p, r_s$
@@ -141,17 +154,27 @@ Note: symbols in the figure differ from those used in this document, and their $
 
 $F_b$ depends on belt tension and sheave geometry:
 
+$N = F_b/\cos(\phi) = R/\sin(\phi)$
+
 $F_b = R/\tan(\phi)$
 
 $R = F_b\tan(\phi)$ where R is a radial force on the sheave due to belt tension, and $\phi$ is half the V angle.
 
-$N = F_b/\cos(\phi) = R/\sin(\phi)$
-
 $R = N\sin(\phi)$
+
+$F_b = N\cos(\phi)$
+
+Something to note is that $R$ is influenced by centripetal force, $F_c$.
+
+$F_c = mr\omega^2$
+
+In the case of the belt, centripetal force along each element is based on this:
+
+$dF_c = \rho A r d\theta\omega_p^2$
 
 If the sheave is not slipping, then the static friction condition holds:
 
-$F_f \le F_{f,max} = \mu N$, and $F_f$ is like a reaction force.
+$F_f \le F_{f,max} = \mu_b N$, and $F_f$ is like a reaction force.
 This reaction force is applied at every point along the belt contact surface. If the total moment from these reaction forces is balanced with the applied torque on the sheave and belt tension, then we can solve for F_f and verify that the static friction condition holds.
 
 Taking sum of forces along the tangential and radial directions for a small slice of the belt contact area:
@@ -170,11 +193,13 @@ Assuming that dT/2 is very small, approximately:
 
 $dR = T d\theta$
 
+$dR = T d\theta$
+
 $dN\sin(\phi) = T d\theta$
 
-$\frac{dN}{d\theta} = T/\sin(\phi)$
+$\frac{dN}{d\theta}\sin(\phi) = T$
 
-Assuming that $T(\theta)$ is in the form of an exponential:
+Assuming that $T(\theta)$ is in the form of an exponential, based on the derivations from WVU and Bestorq:
 
 $T(\theta) = e^{C\theta} + Q$ where $T(0) = T_0$ and $T(\alpha) = T_1$
 
@@ -186,7 +211,7 @@ $T(\theta) = (T_1 - T_0 + 1)^{\theta/\alpha} - 1 + T_0$
 
 $\sin(\phi) \frac{dN}{d\theta} = (T_1 - T_0 + 1)^{\theta/\alpha} - 1 + T_0$
 
-Integrating both sides wrt $d\theta$
+Integrating both sides wrt $d\theta$ with bounds $[0, \alpha]$ for $\theta$
 
 $N \sin(\phi) = \int_0^\alpha{((T_1 - T_0 + 1)^{\theta/\alpha} - 1 + T_0) d\theta}$
 
@@ -202,57 +227,53 @@ $= \frac{\alpha(T_1 - T_0)}{\ln(T_1 - T_0 + 1)} - \alpha(T_0 - 1)$
 
 Using the fact that all torques must cancel:
 
-$T_1 - T_0 = \tau/r$, where $\tau$ is an applied torque and $r$ is the current radius
+$T_1 - T_0 = F_f$
 
-$N \sin(\phi) = \frac{\alpha(\tau/r)}{\ln(\tau/r + 1)} - \alpha(T_0 - 1)$
+$N \sin(\phi) = \frac{\alpha(F_f)}{\ln(F_f + 1)} - \alpha(T_0 - 1)$
 
-$N = \frac{\alpha(\tau/r)}{\sin(\phi)\ln(\tau/r + 1)} - \frac{\alpha}{\sin(\phi)}(T_0 - 1)$
+$N = \frac{\alpha(F_f)}{\sin(\phi)\ln(F_f + 1)} - \frac{\alpha}{\sin(\phi)}(T_0 - 1)$
+
+Substituting for $F_b$:
+
+$F_b = N\cos(\phi)$
+
+$F_b = \frac{\alpha(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\alpha}{\tan(\phi)}(T_0 - 1)$
+
+For the secondary, replace $\alpha$ with $\beta$ and $\omega_p$ with $\omega_s$.
 
 This gives us a relationship between slack side tension force and the normal force.
 
 Once we can determine $T_0$, the rest of the system falls into place.
 
-If the friction "reaction" force $F_f > \mu N$, then:
+To determine whether the system will be slipping, we need to calculate $F_f$ assuming no slip:
 
-$F_f = \mu N$
+$F_f = \tau_p/r_p + \tau_s/r_s$
 
-And this is the applied moment to the sheave.
+If the friction "reaction" force $F_f > \mu_b N$, then the sheave is slipping and torque is limited by kinetic friction:
 
-
-
-R results from slack belt tension and wrap angle
-
-$R = T_0e^{\mu A}$ Replace $A$ with $\alpha$ for primary or $\beta$ for secondary
-
-$F_{bp} = T_0e^{\mu\alpha}/\tan(\phi)$
-
-$F_{bs} = T_0e^{\mu\beta}/\tan(\phi)$
+$F_f = \mu_b N$
 
 
-# Derivation of R
+# Derivation of $T_0$
 
-![Belt Section FBD](figures/Belt%20Slice%20FBD.png)
+We are basing the slack tension of the belt on the spring-like behavior of materials.
+When the belt stretches, there is a static tension through the whole belt, which is T0.
 
-(Bestorq)
+$T_0 = E_b A_b * (L_b - L_{b0}) / L_{b0}$
 
-R is the total axial force applied to the sheaves by the belt.
+$L_b = L_p + L_s + 2L_{mid}$
 
-According to Belt Theory, each point along the contact area
-increases tension from the slack side to the taut side by $\mu R$ Newtons.
+$L_b = r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2}$
 
-$dR = T(\theta)d\theta$
+Substituting $L_b$:
 
-$T(\theta) = T_0e^{\mu\theta}$
+$T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1)$
 
-$dR = T_0e^{\mu\theta}d\theta$
+In addition, there is an effect due to centripetal force. The force effectively acts in opposition to slack side tension.
 
-Integrating from 0 to wrap angle $A$:
+$T_c = \rho_b A_b (r_s\omega_s)^2$ Secondary-based linear belt speed is used, because the secondary is always assumed to have the no-slip condition.
 
-$R = \int_0^A{T_0e^{\mu\theta}d\theta}$
-
-$R = T_0\int_0^A{e^{\mu\theta}d\theta}$
-
-$R = T_0e^{\mu A}$ replace $A$ with $\alpha$ for primary or $\beta$ for secondary
+$T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$
 
 
 # Derivation of $\theta_1, \theta_2, d_p$
@@ -405,9 +426,10 @@ $d_s (k_s + \frac{\kappa_s}{(r_{helix}\tan(\theta_{helix}))^2}) = -k_s d_{0s} + 
 $d_s = (-k_s d_{0s} + F_{bs} - \frac{\theta_{0s} \kappa_s}{r_{helix}\tan(\theta_{helix})})/(k_s + \frac{\kappa_s}{(r_{helix}\tan(\theta_{helix}))^2})$ Note how all the units work out to (N)/(N/m)
 
 
-# Derivation of Belt Tension
+# Misc Notes
 
-Belt tension
+- Evaluate fitness of shift curve by optimizing SSE
+- Tune accuracy of system by optimizing the sum of SSE optimizations for all test cases
 
 
 # References

@@ -142,15 +142,9 @@ $\theta_s = \frac{d_s}{r_{helix} \tan(\theta_{helix})}$
 
 # Derivation of $F_b$ vs Tension
 
-![Belt Cross-Section FBD](figures/Belt%20FBD.png)
+![Belt Cross-Section FBD](figures/belt%20cross%20section%20fbd.svg)
 
-(Skinner, 2020)
-
-![Belt Section FBD](figures/Belt%20Slice%20FBD.png)
-
-(Bestorq)
-
-Note: symbols in the figure differ from those used in this document, and their $\phi$ is used as the full V-angle.
+![Belt Section FBD](figures/belt%20tension%20fbd.svg)
 
 $F_b$ depends on belt tension and sheave geometry:
 

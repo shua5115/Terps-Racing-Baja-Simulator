@@ -4,7 +4,7 @@
 
 # Assumptions
 - Constant temperature (no thermal expansion, friction coefficient of belt is constant)
-- Engine torque scales linearly with throttle
+- Engine torque scales with $sin(u\pi/2)$ with throttle, due to rotational intake valve
 - Forces and moments related to the CVT ratio are assumed to be quasi-static
     - Justification: shifting occurs at a slower rate than the acceleration of the vehicle itself
     - Benefit: shift ratio is independent of time, only on position and velocity at the current instant
@@ -35,6 +35,9 @@ $N_{fly}$ | none | Number of flyweight linkages in primary
 $I_e$ | kg-m^2 | Total moment of inertia of spinning engine components
 $I_p$ | kg-m^2 | Total moment of inertia of primary components with constant inertia values
 $I_s$ | kg-m^2 | Total moment of inertia of secondary components with constant inertia values
+$RPM_{gov}$ | rpm | Engine governor RPM
+$RPM_{idle}$ | rpm | Engine idle RPM
+$\tau_{e,max} = $ table lookup relating engine torque to engine speed | N-m | Maximum engine torque, based on engine torque curve of N-m vs. rad/s
 **Primary CVT Tune**
 $ramp(x)$ | function(m) -> m | Function for ramp height vs. x, where x is 0 at the highest ramp point.<br/>This function must be continuous, once differentiable, and $ramp'() < 0$.<br/>Function must be defined over range $[0, d_{p,max}]$.
 $k_p$ | N/m | Linear spring constant for primary spring
@@ -70,6 +73,7 @@ $\theta_{s,max} = \frac{d_{s,max}}{r_{helix}\tan(\theta_{helix})}$ | rad | Max a
 Name|Unit|Description
 ---|:---:|---:
 **Global**
+$u_{gas}$ | none | Throttle
 $\tau_s$ | N-m | Torque load on the secondary
 $\tau_p$ | N-m | Torque load on the primary
 $\omega_p$ | rad/s | Angular velocity of primary
@@ -89,6 +93,7 @@ $d_s$ | m | Linear displacement of secondary sheave during shift, range $[0,d_{s
 # Derived Variables
 Formula|Unit|Description
 ---|:---:|---:
+$\tau_e = (\tau_{e,max})(\sin(u_{gas}\pi/2)(1 - \frac{RPM_{idle}}{RPM_{gov}}) + \frac{RPM_{idle}}{RPM_{gov}})$  | N-m | Engine torque, scaled based on intake valve angle.
 $r_p = d_p/\tan(\phi) + r_{absmin,p}$ | m | Pulley radius of primary
 $r_s = (d_{s,max} - d_s)/\tan(\phi) + r_{absmin,s}$ | m | Pulley radius of secondary
 $\alpha = 2\arccos(\frac{r_s-r_p}{L})$ | rad | Belt wrap angle around primary
@@ -115,7 +120,7 @@ $F_{bp} = \frac{\alpha(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\alpha}{\tan(\phi)}
 $F_{flyarm} = \frac{0.25 m_{fly}(r_{shldr} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$ | Force from flyweights and ramp
 **Secondary Subsystem**
 $F_{ss} = k_s (d_{0s} + d_s)$ | Force from linear secondary spring
-$F_{bs} = \frac{\beta(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\beta}{\tan(\phi)}(T_0 - 1)$ | Force from belt
+$F_{bs} = \frac{\beta(F_{f,s})}{\tan(\phi)\ln(F_{f,s} + 1)} - \frac{\beta}{\tan(\phi)}(T_0 - 1)$ | Force from belt
 $T_{ss} = \kappa_s (\theta_{0s} + \theta_s)$ | Torque from torsional secondary spring
 **Belt Drive**
 $\tau_{ps} = \tau_p \frac{r_s}{r_p}$ | Torque applied to secondary from primary

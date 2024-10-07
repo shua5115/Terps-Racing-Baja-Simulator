@@ -187,8 +187,6 @@ Assuming that dT/2 is very small, approximately:
 
 $dR = T d\theta$
 
-$dR = T d\theta$
-
 $dN\sin(\phi) = T d\theta$
 
 $\frac{dN}{d\theta}\sin(\phi) = T$
@@ -266,6 +264,8 @@ $T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 
 In addition, there is an effect due to centripetal force. The force effectively acts in opposition to slack side tension.
 
 $T_c = \rho_b A_b (r_s\omega_s)^2$ Secondary-based linear belt speed is used, because the secondary is always assumed to have the no-slip condition.
+
+(tec-science.com)
 
 $T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$
 
@@ -430,4 +430,6 @@ $d_s = (-k_s d_{0s} + F_{bs} - \frac{\theta_{0s} \kappa_s}{r_{helix}\tan(\theta_
 
 Skinner, Sean Sebastian. "Modeling and Tuning of CVT Systems for SAE® Baja Vehicles". West Virginia University, 2020.
 
-BESTORQ. "Belt Theory". https://www.bestorq.com/techinfo.asp, Accessed 2024.
+BESTORQ. "Belt Theory". https://www.bestorq.com/techinfo.asp, Accessed Oct. 2024.
+
+tec-science.com. "Centrifugal forces in the belt of a belt drive". https://www.tec-science.com/mechanical-power-transmission/belt-drive/centrifugal-forces/, Accessed Oct. 2024.

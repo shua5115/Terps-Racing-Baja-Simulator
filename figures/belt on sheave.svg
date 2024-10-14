@@ -23,13 +23,13 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="2.0686841"
-     inkscape:cx="279.64637"
-     inkscape:cy="107.0729"
-     inkscape:window-width="1920"
-     inkscape:window-height="1017"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
+     inkscape:zoom="4.1373682"
+     inkscape:cx="204.11526"
+     inkscape:cy="154.92941"
+     inkscape:window-width="2880"
+     inkscape:window-height="1580"
+     inkscape:window-x="-12"
+     inkscape:window-y="-12"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer2" />
   <defs
@@ -201,22 +201,6 @@
          style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2"
          x="28.428764"
          y="43.240562">r_p</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       x="20.441616"
-       y="8.3229055"
-       id="text22"><tspan
-         sodipodi:role="line"
-         id="tspan22"
-         style="stroke-width:0.2"
-         x="20.441616"
-         y="8.3229055">r_p = (d_p)/tan(phi) + r_absmin,p</tspan><tspan
-         sodipodi:role="line"
-         style="stroke-width:0.2"
-         x="20.441616"
-         y="12.291656"
-         id="tspan46">r_s = (d_s,max - d_s)/tan(phi) + r_absmin,s</tspan></text>
     <path
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.199999;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:0.599999, 0.599999;stroke-dashoffset:0;stroke-opacity:1"
        d="m 33.679695,56.328541 34.295251,0.02168"
@@ -293,7 +277,7 @@
        id="text47"><tspan
          sodipodi:role="line"
          id="tspan47"
-         style="stroke-width:0.2"></tspan></text>
+         style="stroke-width:0.2" /></text>
     <text
        xml:space="preserve"
        style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
@@ -305,5 +289,25 @@
          style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2"
          x="45.984547"
          y="54.803486">d_max</tspan></text>
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.199999;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:0.599999, 0.599999;stroke-dashoffset:0;stroke-opacity:1"
+       d="m 50.914517,50.145828 17.06061,0.03966"
+       id="path4"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.200002;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker-start:url(#Triangle);marker-end:url(#marker7)"
+       d="m 67.359815,50.908535 v 4.696957"
+       id="path5" />
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       x="68.2911"
+       y="54.14378"
+       id="text5"><tspan
+         sodipodi:role="line"
+         id="tspan5"
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2"
+         x="68.2911"
+         y="54.14378">r_inner</tspan></text>
   </g>
 </svg>

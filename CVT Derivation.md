@@ -19,13 +19,16 @@
 Name|Unit|Description
 ---|:---:|---:
 **Global**
-$r_{absmin,p}$ | m | Inner radius of primary, bottom of where sheaves touch
-$r_{absmin,s}$ | m | Inner radius of secondary, bottom of where sheaves touch
+$r_{inner,p}$ | m | Radius where the bottom of primary sheaves touch
+$r_{inner,s}$ | m | Radius where the bottom of secondary sheaves touch
 $\phi$ | rad | Half of the angle between sheaves (also applies to belt V-shape)
 $L$ | m | Center to center distance between primary and secondary
 $L_{b0}$ | m | Unstretched belt length
-$b$ | m | Average width of belt V-shaped section
-$A_b$ | m^2 | Belt cross sectional area
+$b_{min}$ | m | Minimum width of belt 
+$b_{max}$ | m | Maximum width of belt
+$h_v$ | m | Height of V-shaped part of belt
+$h$ | m | Total height of belt
+$A_b$ | m^2 | Belt cross sectional area, specifically the part in between the ridges that can support tensile loads
 $m_b$ | kg | Total mass of belt
 $E_b$ | Pa | Young's modulus of belt
 $G_b$ | Pa | Shear modulus of belt
@@ -65,9 +68,11 @@ $r_{helix}$ | m | Radius of secondary helix ramp
 # Derived Constants
 Formula|Unit|Description
 ---|:---:|---:
+$b = \frac{b_{min} + b_{max}}{2}$ | m | Average width of belt V-shaped section
+$r_{absmin,p} = \frac{\min(d_{p,max},b_{min})/2}{\tan(\phi)} + r_{inner,p} + h_v/2$ | m | Minimum radius of belt around primary
+$r_{absmin,s} = \frac{\min(d_{s,max},b_{min})/2}{\tan(\phi)} + r_{inner,s} + h_v/2$ | m | Minimum radius of belt around secondary
 $\rho_b = \frac{m_b}{A_b L_{b0}}$ | kg/m^3 | Density of the belt
 $\theta_{s,max} = \frac{d_{s,max}}{r_{helix}\tan(\theta_{helix})}$ | rad | Max angular displacement of secondary sheave and torsional spring
-
 
 # Time-Dependent Variables
 Name|Unit|Description
@@ -118,19 +123,32 @@ $F_f = T_1 - T_0 = \mu_b N_p + \tau_s/r_s$ | Relation between slack and taut ten
 $F_{sp} = k_p (d_{0p} + d_p)$ | Force from linear primary spring
 $F_{bp} = \frac{\alpha(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\alpha}{\tan(\phi)}(T_0 - 1)$ | Force from belt
 $F_{flyarm} = \frac{0.25 m_{fly}(r_{shldr} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$ | Force from flyweights and ramp
+$F1 = ?$ | unknown constant friction force, always opposing shifting
+$F2 = ?*\omega_p^2$ | unknown friction force proportional to centripetal force, opposing shifting
 **Secondary Subsystem**
 $F_{ss} = k_s (d_{0s} + d_s)$ | Force from linear secondary spring
 $F_{bs} = \frac{\beta(F_{f,s})}{\tan(\phi)\ln(F_{f,s} + 1)} - \frac{\beta}{\tan(\phi)}(T_0 - 1)$ | Force from belt
 $T_{ss} = \kappa_s (\theta_{0s} + \theta_s)$ | Torque from torsional secondary spring
+$F3 = ?$ | unknown constant friction force, always opposing shifting
 **Belt Drive**
-$\tau_{ps} = \tau_p \frac{r_s}{r_p}$ | Torque applied to secondary from primary
-$M_s = \tau_{ps} - \tau_s$ | Net moment applied to secondary
+$M_s = F_f*r_s - \tau_s - (F_1 \omega_p^2 + F_2 \omega_p + F_3)$ | Net moment applied to secondary
 
 
 # Derivation of $r_p, r_s$
 
 ![Sheave Diagram](figures/belt%20on%20sheave.svg)
 
+$r_p = d_p/\tan(\phi) + r_{absmin,p}$
+
+$r_s = (\min(d_{s,max}, b_{min}) - d_s)/\tan(\phi) + r_{absmin,s}$
+
+$d_p = \tan(\phi)(r_p - r_{absmin,p})$
+
+$d_s = \min(d_{s,max}, b_{min}) - \tan(\phi)(r_s - r_{absmin,s})$
+
+$\tan(\phi) = \frac{\min(d_{max},b_{min})/2}{r_{absmin} - r_{inner} - h_v/2}$
+
+$r_{absmin} = \frac{\min(d_{max},b_{min})/2}{\tan(\phi)} + r_{inner} + h_v/2$ Adding $h_v/2$ to account for thickness of belt
 
 # Derivation of $\theta_s$
 
@@ -433,8 +451,11 @@ $d_s = (-k_s d_{0s} + F_{bs} - \frac{\theta_{0s} \kappa_s}{r_{helix}\tan(\theta_
 
 # References
 
-Skinner, Sean Sebastian. "Modeling and Tuning of CVT Systems for SAE® Baja Vehicles". West Virginia University, 2020.
+Arora, Jasbir Singh. Introduction to optimum design. Elsevier, 2004.
 
 BESTORQ. "Belt Theory". https://www.bestorq.com/techinfo.asp, Accessed Oct. 2024.
 
+Skinner, Sean Sebastian. "Modeling and Tuning of CVT Systems for SAE® Baja Vehicles". West Virginia University, 2020.
+
 tec-science.com. "Centrifugal forces in the belt of a belt drive". https://www.tec-science.com/mechanical-power-transmission/belt-drive/centrifugal-forces/, Accessed Oct. 2024.
+

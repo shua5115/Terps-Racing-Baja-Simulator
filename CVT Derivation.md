@@ -18,9 +18,7 @@
 # Constants
 Name|Unit|Description
 ---|:---:|---:
-**Global**
-$r_{inner,p}$ | m | Radius where the bottom of primary sheaves touch
-$r_{inner,s}$ | m | Radius where the bottom of secondary sheaves touch
+**General**
 $\phi$ | rad | Half of the angle between sheaves (also applies to belt V-shape)
 $L$ | m | Center to center distance between primary and secondary
 $L_{b0}$ | m | Unstretched belt length
@@ -31,10 +29,8 @@ $h$ | m | Total height of belt
 $A_b$ | m^2 | Belt cross sectional area, specifically the part in between the ridges that can support tensile loads
 $m_b$ | kg | Total mass of belt
 $E_b$ | Pa | Young's modulus of belt
-$G_b$ | Pa | Shear modulus of belt
 $\mu_b$ | none | Coefficient of friction of belt with sheaves
 $N_g$ | none | Fixed gear ratio between the secondary and the wheels
-$N_{fly}$ | none | Number of flyweight linkages in primary
 $I_e$ | kg-m^2 | Total moment of inertia of spinning engine components
 $I_p$ | kg-m^2 | Total moment of inertia of primary components with constant inertia values
 $I_s$ | kg-m^2 | Total moment of inertia of secondary components with constant inertia values
@@ -48,18 +44,21 @@ $m_{fly}$ | kg | Mass of flyweights, total
 **Secondary CVT Tune**
 $k_s$ | N/m | Linear spring constant for secondary spring
 $\kappa_s$ | N-m/rad | Torsional spring constant for secondary spring
-$\theta_{0s}$ | rad | Angular pretension of secondary spring
+$\theta_{s0}$ | rad | Angular pretension of secondary spring
 $\theta_{helix}$ | rad | Angle of the secondary helix ramp
 **Primary Subsystem**
+$N_{fly}$ | none | Number of flyweight linkages in primary
+$r_{inner,p}$ | m | Radius where the bottom of primary sheaves touch
 $d_{p,max}$ | m | Max linear gap between primary sheaves
 $d_{0p}$ | m | Primary spring initial displacement
 $r_{cage}$ | m | Radius from primary axis to outer edge of primary ramp
-$r_{shldr}$ | m | Radius from primary axis to flyweight arm pivot
+$r_{shoulder}$ | m | Radius from primary axis to flyweight arm pivot
 $L_{arm}$ | m | Length of flyweight arm
 $r_{roller}$ | m | Radius of rollers in primary
-$x_{ramp}$ | m | Offset from flyweight arm pivot to furthest edge of ramp
+$x_{ramp}$ | m | Offset from flyweight arm pivot to furthest outwards edge of ramp
 $m_{flyarm}$ | kg | Mass of arm connected to flyweight
 **Secondary Subsystem**
+$r_{inner,s}$ | m | Radius where the bottom of secondary sheaves touch
 $d_{s,max}$ | m | Max linear gap between secondary sheaves
 $d_{0s}$ | m | Secondary spring initial linear displacement
 $r_{helix}$ | m | Radius of secondary helix ramp
@@ -69,8 +68,8 @@ $r_{helix}$ | m | Radius of secondary helix ramp
 Formula|Unit|Description
 ---|:---:|---:
 $b = \frac{b_{min} + b_{max}}{2}$ | m | Average width of belt V-shaped section
-$r_{absmin,p} = \frac{\min(d_{p,max},b_{min})/2}{\tan(\phi)} + r_{inner,p} + h_v/2$ | m | Minimum radius of belt around primary
-$r_{absmin,s} = \frac{\min(d_{s,max},b_{min})/2}{\tan(\phi)} + r_{inner,s} + h_v/2$ | m | Minimum radius of belt around secondary
+$r_{p,min} = \frac{\min(d_{p,max},b_{min})/2}{\tan(\phi)} + r_{inner,p} + h_v/2$ | m | Minimum radius of belt around primary
+$r_{s,min} = \frac{\min(d_{s,max},b_{min})/2}{\tan(\phi)} + r_{inner,s} + h_v/2$ | m | Minimum radius of belt around secondary
 $\rho_b = \frac{m_b}{A_b L_{b0}}$ | kg/m^3 | Density of the belt
 $\theta_{s,max} = \frac{d_{s,max}}{r_{helix}\tan(\theta_{helix})}$ | rad | Max angular displacement of secondary sheave and torsional spring
 
@@ -88,7 +87,7 @@ $T_1$ | N | Taut-side belt tension (quasi-static)
 $L_b$ | m | Current belt length (quasi-static)
 **Primary Subsystem**
 $d_p$ | m | Linear displacement of primary sheave during shift, range $[0,d_{p,max}]$, initially 0 (quasi-static)
-$d_r$ | m | Linear displacement of roller from innermost edge of ramp (quasi-static)
+$d_r$ | m | Linear displacement of roller from outermost edge of ramp (quasi-static)
 $\theta_1$ | rad | Angle between flyweight arm and primary axis (quasi-static)
 $\theta_2$ | rad | Angle between primary ramp surface normal at roller contact point and primary axis (quasi-static)
 **Secondary Subsystem**
@@ -99,16 +98,15 @@ $d_s$ | m | Linear displacement of secondary sheave during shift, range $[0,d_{s
 Formula|Unit|Description
 ---|:---:|---:
 $\tau_e = (\tau_{e,max})(\sin(u_{gas}\pi/2)(1 - \frac{RPM_{idle}}{RPM_{gov}}) + \frac{RPM_{idle}}{RPM_{gov}})$  | N-m | Engine torque, scaled based on intake valve angle.
-$r_p = d_p/\tan(\phi) + r_{absmin,p}$ | m | Pulley radius of primary
-$r_s = (d_{s,max} - d_s)/\tan(\phi) + r_{absmin,s}$ | m | Pulley radius of secondary
+$r_p = d_p/\tan(\phi) + r_{p,min}$ | m | Pulley radius of primary
+$r_s = (d_{s,max} - d_s)/\tan(\phi) + r_{s,min}$ | m | Pulley radius of secondary
 $\alpha = 2\arccos(\frac{r_s-r_p}{L})$ | rad | Belt wrap angle around primary
 $\beta = 2\arccos(\frac{r_p-r_s}{L})$  | rad | Belt wrap angle around secondary
 $\theta_s = \frac{d_s}{r_{helix}\tan(\theta_{helix})}$ | rad | Angular twist of secondary spring during shift, range $[0,\theta_{s,max}]$
-$r_{fly} = r_{shldr} + L_{arm} \sin(\theta_1)$ | m | Distance from flyweight to primary axis
+$r_{fly} = r_{shoulder} + L_{arm} \sin(\theta_1)$ | m | Distance from flyweight to primary axis
 $\theta_1 =$ solve numerically | rad | Angle of flyweight arm from primary axis
 $\theta_2 =$ solve numerically | rad | Angle of surface normal of primary ramp at roller contact point
 $d_r =$ solve numerically | m | Displacement of roller from rightmost edge of ramp
-$F_f = \tau_p/r_p + \tau_s/r_s$ | N | Friction force at primary, assuming no slip
 $N_p = \frac{\alpha(F_f)}{\sin(\phi)\ln(F_f + 1)} - \frac{\alpha}{\sin(\phi)}(T_0 - 1)$ | N | Net normal force applied to belt surface at primary
 
 
@@ -122,13 +120,13 @@ $F_f = T_1 - T_0 = \mu_b N_p + \tau_s/r_s$ | Relation between slack and taut ten
 **Primary Subsystem**
 $F_{sp} = k_p (d_{0p} + d_p)$ | Force from linear primary spring
 $F_{bp} = \frac{\alpha(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\alpha}{\tan(\phi)}(T_0 - 1)$ | Force from belt
-$F_{flyarm} = \frac{0.25 m_{fly}(r_{shldr} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$ | Force from flyweights and ramp
+$F_{flyarm} = \frac{0.25 m_{fly}(r_{shoulder} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$ | Force from flyweights and ramp
 $F1 = ?$ | unknown constant friction force, always opposing shifting
 $F2 = ?*\omega_p^2$ | unknown friction force proportional to centripetal force, opposing shifting
 **Secondary Subsystem**
 $F_{ss} = k_s (d_{0s} + d_s)$ | Force from linear secondary spring
 $F_{bs} = \frac{\beta(F_{f,s})}{\tan(\phi)\ln(F_{f,s} + 1)} - \frac{\beta}{\tan(\phi)}(T_0 - 1)$ | Force from belt
-$T_{ss} = \kappa_s (\theta_{0s} + \theta_s)$ | Torque from torsional secondary spring
+$T_{ss} = \kappa_s (\theta_{s0} + \theta_s)$ | Torque from torsional secondary spring
 $F3 = ?$ | unknown constant friction force, always opposing shifting
 **Belt Drive**
 $M_s = F_f*r_s - \tau_s - (F_1 \omega_p^2 + F_2 \omega_p + F_3)$ | Net moment applied to secondary
@@ -138,13 +136,13 @@ $M_s = F_f*r_s - \tau_s - (F_1 \omega_p^2 + F_2 \omega_p + F_3)$ | Net moment ap
 
 ![Sheave Diagram](figures/belt%20on%20sheave.svg)
 
-$r_p = d_p/\tan(\phi) + r_{absmin,p}$
+$r_p = d_p/\tan(\phi) + r_{p,min}$
 
-$r_s = (\min(d_{s,max}, b_{min}) - d_s)/\tan(\phi) + r_{absmin,s}$
+$r_s = (\min(d_{s,max}, b_{min}) - d_s)/\tan(\phi) + r_{s,min}$
 
-$d_p = \tan(\phi)(r_p - r_{absmin,p})$
+$d_p = \tan(\phi)(r_p - r_{p,min})$
 
-$d_s = \min(d_{s,max}, b_{min}) - \tan(\phi)(r_s - r_{absmin,s})$
+$d_s = \min(d_{s,max}, b_{min}) - \tan(\phi)(r_s - r_{s,min})$
 
 $\tan(\phi) = \frac{\min(d_{max},b_{min})/2}{r_{absmin} - r_{inner} - h_v/2}$
 
@@ -305,7 +303,7 @@ Solving this system is not trivial, since the function $ramp(d)$ is arbitrary. I
 
 Free variables (7): $x_1, y_1, x_2, y_2, \theta_1, \theta_2, d_r$
 
-Knowns: $L_1, L_2, x_{ramp}, d_p, r_{cage}, r_{shldr}$ (Note: $L_1 = L_{arm}$ and $L_2 = r_{roller}$)
+Knowns: $L_1, L_2, x_{ramp}, d_p, r_{cage}, r_{shoulder}$ (Note: $L_1 = L_{arm}$ and $L_2 = r_{roller}$)
 
 Arbitrary: $ramp(), ramp'()$
 
@@ -317,7 +315,7 @@ $x_1 = x_{ramp} + d_p - d_r$
 
 $x_2 = x_1 + L_2\cos(\theta_2)$
 
-$y_2 = r_{cage} - r_{shldr} - ramp(d_r - L_2\cos(\theta_2))$
+$y_2 = r_{cage} - r_{shoulder} - ramp(d_r - L_2\cos(\theta_2))$
 
 $y_2 = y_1 + L_2\sin(\theta_2)$
 
@@ -329,7 +327,7 @@ It can be simplified to this system of 3 equations where the variables are $d_r,
 
 eq1: $0 = L_1*\cos(\theta_1) - x_{ramp} + d_r$
 
-eq2: $0 = L_1\sin(\theta_1) + L_2\sin(\theta_2) - r_{cage} + r_{shldr} + ramp(d_r - L_2\cos(\theta_2))$
+eq2: $0 = L_1\sin(\theta_1) + L_2\sin(\theta_2) - r_{cage} + r_{shoulder} + ramp(d_r - L_2\cos(\theta_2))$
 
 eq3: $0 = \arctan(ramp'(d_r - L_2\cos(\theta_2))) + \pi/2 - \theta_2$
 
@@ -394,7 +392,7 @@ $F_{flyarm} = \frac{(0.25 m_{fly}r_{fly}\omega_p^2) L_{arm} \cos(\theta_1) \cos(
 
 $F_{flyarm} = \frac{0.25 m_{fly}r_{fly}\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$
 
-$F_{flyarm} = \frac{0.25 m_{fly}(r_{shldr} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$
+$F_{flyarm} = \frac{0.25 m_{fly}(r_{shoulder} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$
 
 
 # Derivation of $d_p$
@@ -420,27 +418,27 @@ Expand values:
 
 $0 = k_s (d_{0s} + d_s) - F_{bs} + N_{helix} \cos(\theta_{helix})$
 
-$0 = \kappa_s (\theta_{0s} + \frac{d_s}{r_{helix}\tan(\theta_{helix})}) - r_{helix} N_{helix} \sin(\theta_{helix})$
+$0 = \kappa_s (\theta_{s0} + \frac{d_s}{r_{helix}\tan(\theta_{helix})}) - r_{helix} N_{helix} \sin(\theta_{helix})$
 
 Solve moment equation for $N_{helix}$:
 
-$r_{helix} N_{helix} \sin(\theta_{helix}) = \kappa_s (\theta_{0s} + \frac{d_s}{r_{helix}\tan(\theta_{helix})})$
+$r_{helix} N_{helix} \sin(\theta_{helix}) = \kappa_s (\theta_{s0} + \frac{d_s}{r_{helix}\tan(\theta_{helix})})$
 
-$N_{helix}  = \kappa_s (\theta_{0s} + \frac{d_s}{r_{helix}\tan(\theta_{helix})})/(r_{helix} \sin(\theta_{helix}))$
+$N_{helix}  = \kappa_s (\theta_{s0} + \frac{d_s}{r_{helix}\tan(\theta_{helix})})/(r_{helix} \sin(\theta_{helix}))$
 
 Solve force equation for $d_s$:
 
-$0 = k_s (d_{0s} + d_s) - F_{bs} + \cos(\theta_{helix}) \kappa_s (\theta_{0s} + \frac{d_s}{r_{helix}\tan(\theta_{helix})})/(r_{helix} \sin(\theta_{helix}))$
+$0 = k_s (d_{0s} + d_s) - F_{bs} + \cos(\theta_{helix}) \kappa_s (\theta_{s0} + \frac{d_s}{r_{helix}\tan(\theta_{helix})})/(r_{helix} \sin(\theta_{helix}))$
 
-$0 = k_s (d_{0s} + d_s) - F_{bs} + \kappa_s (\theta_{0s} + \frac{d_s}{r_{helix}\tan(\theta_{helix})})/(r_{helix} \tan(\theta_{helix}))$
+$0 = k_s (d_{0s} + d_s) - F_{bs} + \kappa_s (\theta_{s0} + \frac{d_s}{r_{helix}\tan(\theta_{helix})})/(r_{helix} \tan(\theta_{helix}))$
 
-$0 = k_s d_{0s} + k_s d_s - F_{bs} + \frac{\theta_{0s} \kappa_s}{r_{helix}\tan(\theta_{helix})} + \frac{d_s \kappa_s}{(r_{helix}\tan(\theta_{helix}))^2}$
+$0 = k_s d_{0s} + k_s d_s - F_{bs} + \frac{\theta_{s0} \kappa_s}{r_{helix}\tan(\theta_{helix})} + \frac{d_s \kappa_s}{(r_{helix}\tan(\theta_{helix}))^2}$
 
-$k_s d_s + \frac{d_s \kappa_s}{(r_{helix}\tan(\theta_{helix}))^2} = -k_s d_{0s} + F_{bs} - \frac{\theta_{0s} \kappa_s}{r_{helix}\tan(\theta_{helix})}$
+$k_s d_s + \frac{d_s \kappa_s}{(r_{helix}\tan(\theta_{helix}))^2} = -k_s d_{0s} + F_{bs} - \frac{\theta_{s0} \kappa_s}{r_{helix}\tan(\theta_{helix})}$
 
-$d_s (k_s + \frac{\kappa_s}{(r_{helix}\tan(\theta_{helix}))^2}) = -k_s d_{0s} + F_{bs} - \frac{\theta_{0s} \kappa_s}{r_{helix}\tan(\theta_{helix})}$
+$d_s (k_s + \frac{\kappa_s}{(r_{helix}\tan(\theta_{helix}))^2}) = -k_s d_{0s} + F_{bs} - \frac{\theta_{s0} \kappa_s}{r_{helix}\tan(\theta_{helix})}$
 
-$d_s = (-k_s d_{0s} + F_{bs} - \frac{\theta_{0s} \kappa_s}{r_{helix}\tan(\theta_{helix})})/(k_s + \frac{\kappa_s}{(r_{helix}\tan(\theta_{helix}))^2})$ Note how all the units work out to (N)/(N/m)
+$d_s = (-k_s d_{0s} + F_{bs} - \frac{\theta_{s0} \kappa_s}{r_{helix}\tan(\theta_{helix})})/(k_s + \frac{\kappa_s}{(r_{helix}\tan(\theta_{helix}))^2})$ Note how all the units work out to (N)/(N/m)
 
 
 # Misc Notes

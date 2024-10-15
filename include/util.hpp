@@ -12,16 +12,20 @@
 #define SLUG2KG   (14.593902937)
 #define LBF2KG    (0.45359236844386) // ONLY use for weight under earth's gravity
 
-constexpr inline double lerp(double a, double b, double t) {
+constexpr double lerp(double a, double b, double t) {
     return a*(1.0-t) + b*t;
 }
 
-constexpr inline double invlerp(double a, double b, double v) {
+constexpr double invlerp(double a, double b, double v) {
     return (v-a)/(b-a);
 }
 
-constexpr inline double remap(double v, double a1, double b1, double a2, double b2) {
+constexpr double remap(double v, double a1, double b1, double a2, double b2) {
     return lerp(a2, b2, invlerp(a1, b1, v));
+}
+
+constexpr double clamp(double v, double lo, double hi) {
+    return std::min(std::max(v, lo), hi);
 }
 
 // hack to make std::sort works

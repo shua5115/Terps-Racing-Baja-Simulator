@@ -1,134 +1,148 @@
 #pragma once
 
 #include <cmath>
-#include <vector>
 #include "Eigen/Dense"
 #include "util.hpp"
 
 namespace TRB {
 
-struct VehicleConfig {
-    // columns are: RPM, torque (N-m)
-    Eigen::MatrixX2d engine_torque_curve;
-    double fixed_gear_ratio;
-    double tire_radius;
-    double mass;
-};
-
 struct VehicleControls {
     double steering = 0;    // -1 to 1
     double throttle = 0;    // 0 to 1
     double brake_pedal = 0; // 0 to 1
-    double awd_lever = 0;   // 0 or 1
+    double awd_lever = 0;   // 0 to 1
 };
 
-// Variables about the CVT that are constant
-struct CVTConfig {
-    double r_p;          // m, inner radius of primary for belt
-    double R_p;          // m, outer radius of primary for belt
-    double r_s;          // m, inner radius of secondary for belt
-    double R_s;          // m, outer radius of secondary fot belt
-    double v_angle;      // radians, angle between sheaves
-    double g_p;          // m, max gap between primary sheaves
-    double g_s;          // m, max gap between secondary sheaves
-    double L;            // m, distance between primary and secondary
-    double l_b;          // m, belt length
-    double A_b;          // m^2, belt cross section area
-    double m_b;          // kg, mass of belt
-    double E_b;          // Pa, Young's modulus of belt
-    double G_b;          // Pa, shear modulus of belt
-    double mu_b;         // Belt coefficient of friction
-    double p_spring_x0;  // m, Primary spring initial displacement
-    double s_spring_x0;  // m, Secondary spring initial displacement
-    double r_helix;      // m, Radius of secondary helix ramp
-    double m_fly_arm;    // kg, Mass of arm connected to flyweight
-    // double r_fly_min;    // kg, Minimum radius of flyweights
-    // double r_fly_max;    // kg, Maximum radius of flyweights
-
-    // Dependent values
-    
-    // Effective coefficient of friction
-    double mu_e() {
-        return mu_b/std::sin(0.5*v_angle);
-    }
-};
-
-// CVT parameters which are easily changed in reality
-// that influence vehicle performance
 struct CVTTune {
-    double (*p_ramp_fn)(double x); // Function for ramp height vs. x, where x and height are 0 at the beginning of shift, all units in meters.
-    double p_spring_k; // N/m
-    double p_fly_mass_total; // kg
-    double s_spring_k; // N/m
-    double s_torsion_k; // N-m/rad
-    double s_pretension; // radians
-    double s_helix_angle; // radians
+    // Primary
+    double (*p_ramp_fn)(double x); // Function for ramp height vs. x, where x is 0 at the beginning of shift, all units in meters.
+    double k_p; // N/m, linear spring constant of primary spring
+    double m_fly; // kg, mass of all flyweights in the primary
+    // Secondary
+    double k_s; // N/m, linear spring constant of secondary spring
+    double kappa_s; // N-m/rad, torsional spring constant of secondary spring
+    double theta_s_0; // rad, angular pretension of secondary spring
+    double theta_helix; // rad, angle of secondary helix ramp
 };
 
-// Continuously Variable Transmission real-time information
-struct CVTState {
-    double w_p; // rad/s of primary
-    double w_s; // rad/s of secondary
-    double r_p; // current radius of primary, based on sheave position
-    double r_s; // current radius of secondary, based on sheave position
-
-    // Belt wrap angle around the primary, in radians
-    double belt_wrap_primary(double cvt_center_to_center_dist) {
-        return 2.0*std::acos((r_s-r_p)/cvt_center_to_center_dist);
-    }
-
-    // Belt wrap angle around the secondary, in radians
-    double belt_wrap_secondary(double cvt_center_to_center_dist) {
-        return 2.0*std::acos((r_p-r_s)/cvt_center_to_center_dist);
-    }
-
-    // Current gear ratio of the CVT based on sheave position
-    double shift_ratio() {
-        return r_s/r_p;
-    }
-
-    double primary_clamp_force(CVTConfig &config, CVTTune &tune) {
-        // TODO include 
-        return 0;
-    }
-
-    // Equation 39 from WVU, removing *12 constant due to unecessary unit conversion (thanks metric!)
-    double secondary_clamp_force(CVTConfig &config, CVTTune &tune, double plunge, double secondary_torque_load) {
-        double shift_angle = plunge/(std::tan(tune.s_helix_angle)*config.r_helix);
-        double from_linear = tune.s_spring_k*(config.s_spring_x0 + plunge);
-        double from_torsion = tune.s_torsion_k*(tune.s_pretension + shift_angle) + secondary_torque_load/config.r_helix;
-        from_torsion /= 2*std::tan(tune.s_helix_angle);
-        return (from_linear + from_torsion)/belt_wrap_secondary(config.L);
-    }
-
-    // Equation 33 from WVU (literally equivalent to eq. 34)
-    double secondary_slack_tension(double r, double w, double f_clamp, double wrap_angle, double v_angle, double belt_mass, double mu_e) {
-        return (2*std::sin(wrap_angle*0.5)*(2*f_clamp*std::tan(v_angle*0.5) + belt_mass*r*r*w*w/12))/
-            (std::cos(0.5*(wrap_angle-PI)) * (std::exp(mu_e*wrap_angle) + 1));
-    }
-
-    
-};
-
-struct Vehicle {
-    VehicleConfig config;
+struct BajaState {
+    // Vehicle
+    Eigen::MatrixX2d engine_torque_curve; // columns are: RPM, torque (N-m)
     VehicleControls controls;
-    CVTConfig cvt_config;
     CVTTune cvt_tune;
-    CVTState cvt;
+    double rpm_gov;     // rpm, max rpm of engine
+    double rpm_idle;    // rpm, min rpm of engine
+    double N_g;         // Fixed gear ratio between CVT secondary and rear wheels
+    double tire_radius; // m
+    double mass;        // kg, total mass of the car (including the driver)
+    double wheelbase;   // m, distance between front and rear wheels
+    double com_x;       // m, forward distance from rear wheel to center of mass
+    double com_height;  // m, distance from ground to center of mass 
+    // Powertrain
+    double phi;         // rad, half of angle between sheaves
+    double L;           // m, distance between primary and secondary
+    double L_b0;        // m, unstretched belt length
+    double b_min;       // m, minimum width of belt
+    double b_max;       // m, maximum width of belt
+    double h_v;         // m, height of v-shaped part of belt
+    double h;           // m, total height of belt
+    double A_b;         // m^2, belt cross section area, but only the part that stretches
+    double m_b;         // kg, mass of belt
+    double E_b;         // Pa, Young's modulus of belt
+    double mu_b;        // Belt coefficient of friction with sheaves
+    double I_e;         // kg-m^2, total moment of inertia of spinning engine components
+    double I_p;         // kg-m^2, total moment of inertia of primary components
+    double I_s;         // kg-m^2, total moment of inertia of secondary components
+    // Primary
+    uint8_t N_fly;      // Number of flyweight linkages in primary
+    double r_p_inner;   // m, radius where bottom of primary sheaves touch
+    double d_p_max;     // m, max linear gap between primary sheaves
+    double d_p_0;       // m, primary spring initial displacement
+    double r_cage;      // m, radius from primary axis to outer edge of primary ramp
+    double r_shoulder;  // m, radius from primary axis to flyweight arm pivot
+    double L_arm;       // m, length of flyweight arm
+    double r_roller;    // m, radius of rollers in primary
+    double x_ramp;      // m, offset from flyweight arm pivot to furthest outwards edge of ramp
+    // Secondary
+    double r_s_inner;   // m, radius where bottom of secondary sheaves touch
+    double d_s_max;     // m, max linear gap between secondary sheaves
+    double d_s_0;       // m, Secondary spring initial displacement
+    double r_helix;     // m, Radius of secondary helix ramp
 
-    double torque_from_vehicle_on_secondary(double slope_angle) {
-        return config.mass*std::sin(slope_angle)*config.tire_radius/config.fixed_gear_ratio;
+    // Time-Dependent
+
+    double tau_s;       // N-m, torque applied to secondary from gearbox
+    double tau_p;       // N-m, torque applied to primary from engine
+    double omega_p;     // rad/s, angular velocity of primary
+    double omega_s;     // rad/s, angular velocity of secondary
+    double T0;          // N, slack side belt tension
+    double T1;          // N, taut side belt tension
+    double L_b;         // m, current belt length
+    // Primary
+    double d_p;         // m, linear displacement of primary sheave during shift
+    double d_r;         // m, linear displacement of roller from outermost edge of ramp
+    double theta1;      // rad, angle beween flyweight arm and primary axis
+    double theta2;      // rad, angle between primary ramp surface normal and primary axis
+    // Secondary
+    double d_s;         // rad, linear displacement of secondary sheave during shift
+
+    // Derived Constants
+
+    // Average width of belt
+    constexpr double b() {
+        return (b_min + b_max)/2; 
     }
 
-    double torque_from_engine_on_primary(double engine_rpm) {
-        return matrix_linear_lookup(config.engine_torque_curve, engine_rpm, false);
+    // Minimum radius for belt on primary sheave
+    constexpr double r_p_min() {
+        return (std::min(d_p_max, b_min)*0.5)/(tan(phi)) + r_p_inner + h_v*0.5;
     }
 
-    
+    // Minimum radius for belt on secondary sheave
+    constexpr double r_s_min() {
+        return (std::min(d_s_max, b_min)*0.5)/(tan(phi)) + r_s_inner + h_v*0.5;
+    }
+
+    constexpr double rho_b() {
+        return m_b/(A_b*L_b0);
+    }
+
+    constexpr double theta_s_max() {
+        return d_s_max/(r_helix*tan(cvt_tune.theta_helix));
+    }
+
+    // Derived Variables
+
+    constexpr double throttle_scale(double torque, double u_gas) {
+        return torque*(sin(u_gas*PI*0.5)*(1 - rpm_idle/rpm_gov) + rpm_idle/rpm_gov);
+    }
+
+    constexpr double r_p() {
+        return clamp(d_p, 0, d_p_max)/tan(phi) + r_p_min();
+    }
+
+    constexpr double r_s() {
+        return clamp(d_s_max - d_s, 0, d_s_max)/tan(phi) + r_s_min();
+    }
+
+    constexpr double alpha() {
+        return 2*acos((r_s()-r_p())/L);
+    }
+
+    constexpr double beta() {
+        return 2*acos((r_p()-r_s())/L);
+    }
+
+    constexpr double theta_s() {
+        return (d_s)/(r_helix*tan(cvt_tune.theta_helix));
+    }
+
+    constexpr double r_fly() {
+        return r_shoulder + L_arm*sin(theta1);
+    }
 };
 
-constexpr size_t sizeof_Vehicle = sizeof(Vehicle);
+constexpr size_t BAJA_SIZE = sizeof(BajaState);
 
 // Column units: RPM, N-m
 const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({
@@ -146,13 +160,14 @@ const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({
     {3800, 0} // Governor prevents going above 3800, need to verify behavior
 });
 
-const VehicleConfig TR24_CONFIG = VehicleConfig{
+const BajaState TR24_STATE = BajaState{
     .engine_torque_curve=CH440_TORQUE_CURVE,
-    .fixed_gear_ratio=8.32,
+    .N_g=8.32,
     .tire_radius=11.5*IN2M,
     .mass=500*LBF2KG,
 };
 
+/*
 constexpr CVTConfig GAGED_GX9_CONFIG = {
     .r_p = 0.975*IN2M,          // m, from WVU
     .R_p = 2.775*IN2M,          // m, from WVU
@@ -185,5 +200,6 @@ double gaged_gx9_primary_ramp_flat(double x) {
     // TODO, use function fit from excel
     return 0.0;
 }
+*/
 
 } // namespace TRB

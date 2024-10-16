@@ -34,6 +34,9 @@ $N_g$ | none | Fixed gear ratio between the secondary and the wheels
 $I_e$ | kg-m^2 | Total moment of inertia of spinning engine components
 $I_p$ | kg-m^2 | Total moment of inertia of primary components with constant inertia values
 $I_s$ | kg-m^2 | Total moment of inertia of secondary components with constant inertia values
+$I_w$ | kg-m^2 | Total moment of inertia of all four wheels
+$m_{car}$ | kg | Total mass of car
+$r_{wheel}$ | m | Radius of the wheels
 $RPM_{gov}$ | rpm | Engine governor RPM
 $RPM_{idle}$ | rpm | Engine idle RPM
 $\tau_{e,max} = $ table lookup relating engine torque to engine speed | N-m | Maximum engine torque, based on engine torque curve of N-m vs. rad/s
@@ -130,6 +133,10 @@ $T_{ss} = \kappa_s (\theta_{s0} + \theta_s)$ | Torque from torsional secondary s
 $F3 = ?$ | unknown constant friction force, always opposing shifting
 **Belt Drive**
 $M_s = F_f*r_s - \tau_s - (F_1 \omega_p^2 + F_2 \omega_p + F_3)$ | Net moment applied to secondary
+
+# Dynamics
+Formula | Description
+---|---:
 
 
 # Derivation of $r_p, r_s$
@@ -288,7 +295,7 @@ $T_c = \rho_b A_b (r_s\omega_s)^2$ Secondary-based linear belt speed is used, be
 
 (tec-science.com)
 
-$T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$
+$T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$ 
 
 
 # Derivation of $\theta_1, \theta_2, d_p$
@@ -439,6 +446,39 @@ $k_s d_s + \frac{d_s \kappa_s}{(r_{helix}\tan(\theta_{helix}))^2} = -k_s d_{0s} 
 $d_s (k_s + \frac{\kappa_s}{(r_{helix}\tan(\theta_{helix}))^2}) = -k_s d_{0s} + F_{bs} - \frac{\theta_{s0} \kappa_s}{r_{helix}\tan(\theta_{helix})}$
 
 $d_s = (-k_s d_{0s} + F_{bs} - \frac{\theta_{s0} \kappa_s}{r_{helix}\tan(\theta_{helix})})/(k_s + \frac{\kappa_s}{(r_{helix}\tan(\theta_{helix}))^2})$ Note how all the units work out to (N)/(N/m)
+
+# Derivation of Vehicle Dynamics
+
+Find sum of forces on effective mass of car (mass plus inertia times radius).
+
+Conversion between mass and inertia: (mass) kg = (inertia times distance squared) kg-m^2 * 1/m^2
+
+$\ddot{x} m = F$
+
+$\ddot{x} (m_{car} + (I_e + I_p)(\frac{N_g r_s}{r_{wheel} r_p})^2 + I_s (\frac{N_g}{r_{wheel}})^2 + I_w(\frac{1}{r_{wheel}})^2) = F_f \frac{r_s N_g}{r_{wheel}} + m_{car} g \sin(\theta_{ground})$
+
+$\ddot{x} = \frac{F_f \frac{r_s N_g}{r_{wheel}} + m_{car} g \sin(\theta_{ground})}{m_{car} + (I_e + I_p)(\frac{N_g r_s}{r_{wheel} r_p})^2 + I_s (\frac{N_g}{r_{wheel}})^2 + I_w(\frac{1}{r_{wheel}})^2}$
+
+After solving for force equilibrium in the CVT using the applied torque from the engine and the external environment,
+the velocity can be changed by being the integral of acceleration.
+
+Using midpoint numeric integration:
+
+$\dot{x}|_{t} = \frac{\ddot{x}|_{t} + \ddot{x}|_{t - \Delta t}}{2} \Delta t$
+
+If the CVT belt is not slipping on the primary, then the following condition must hold:
+
+$\omega_p r_p = \omega_s r_s$
+
+However, momenutum must be conserved. We can consider the effective angular momentum ("H") of all components:
+
+$H = (I_p + I_e) w_p + I_s w_s + I_w (w_s/N_g) + m_{car}(w_s/N_g)r_{wheel}^2$
+
+To correct the ratio of speeds between the primary and secondary, we can solve the two above equations for adjusted angular velocities:
+
+$w_{p,adj} = \frac{H N_g r_s}{m_{car} r_p r_{wheel}^2 + I_w r_p + I_e N_g r_s + I_p N_g r_s + I_s N_g r_p}$
+
+$w_{s,adj} = w_{p,adj} \frac{r_p}{r_s}$
 
 
 # Misc Notes

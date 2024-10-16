@@ -12,6 +12,12 @@
 #define SLUG2KG   (14.593902937)
 #define LBF2KG    (0.45359236844386) // ONLY use for weight under earth's gravity
 
+// Positive modulo
+template<typename T>
+constexpr T mod(const T i, const T n) {
+    return (n + (i % n)) % n;
+}
+
 constexpr double lerp(double a, double b, double t) {
     return a*(1.0-t) + b*t;
 }
@@ -28,7 +34,7 @@ constexpr double clamp(double v, double lo, double hi) {
     return std::min(std::max(v, lo), hi);
 }
 
-// hack to make std::sort works
+// hack to make std::sort work
 namespace Eigen {
     template<class T>
     void swap(T&& a, T&& b){
@@ -51,19 +57,7 @@ inline void matrix_sort_cols(Eigen::MatrixXd mat, Eigen::Index row) {
 double matrix_linear_lookup(Eigen::MatrixX2d mat, double val, bool extrapolate = false);
 
 // Finds the slope of an arbitrary 1-D function at input x numerically using two-sided finite difference.
-inline double slope(double(*f)(double), double x, double step=0.00001) {
+template<typename F>
+double diff_central(F f, double x, double step) {
     return (f(x+step) - f(x-step))*0.5/(step);
-}
-
-// Finds the y value of a circle with radius r tangent to an unknown function f at location x.
-// Useful for calculating roller height on a ramp.
-double circle_trace(double(*f)(double), double x, double r);
-
-
-inline double taut_tension_from_slack_tension(double slack_tension, double wrap_angle, double mu_e) {
-    return slack_tension*exp(mu_e*wrap_angle);
-}
-
-inline double slack_tension_from_taut_tension(double taut_tension, double wrap_angle, double mu_e) {
-    return taut_tension/exp(mu_e*wrap_angle);
 }

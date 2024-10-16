@@ -4,16 +4,18 @@ project(trb_sim)
 include_directories(./include)
 include_directories(.)
 
-add_executable(baja_sim
-src/main.cpp
+set(CMAKE_CXX_STANDARD 20)
+
+if(WIN32)
+    add_compile_options(/bigobj)
+endif()
+
+set(model_src
 src/util.cpp
 src/opt.cpp
 )
-set_property(TARGET baja_sim PROPERTY CXX_STANDARD 20)
 
 add_executable(test
 src/test.cpp
-src/util.cpp
-src/opt.cpp
+${model_src}
 )
-set_property(TARGET test PROPERTY CXX_STANDARD 20)

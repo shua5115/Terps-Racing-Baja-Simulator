@@ -28,5 +28,3 @@ double matrix_linear_lookup(Eigen::MatrixX2d mat, double val, bool extrapolate) 
     }
     return mat(len-1, 1);
 }
-
-double circle_trace(double(*f)(double), double x, double r);

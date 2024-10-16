@@ -4,8 +4,6 @@
 #include "Eigen/Dense"
 #include "util.hpp"
 
-namespace TRB {
-
 struct VehicleControls {
     double steering = 0;    // -1 to 1
     double throttle = 0;    // 0 to 1
@@ -33,8 +31,8 @@ struct BajaState {
     double rpm_gov;     // rpm, max rpm of engine
     double rpm_idle;    // rpm, min rpm of engine
     double N_g;         // Fixed gear ratio between CVT secondary and rear wheels
-    double tire_radius; // m
-    double mass;        // kg, total mass of the car (including the driver)
+    double m_car;       // kg, total mass of the car (including the driver)
+    double r_wheel;     // m, radius of the tires
     double wheelbase;   // m, distance between front and rear wheels
     double com_x;       // m, forward distance from rear wheel to center of mass
     double com_height;  // m, distance from ground to center of mass 
@@ -53,6 +51,7 @@ struct BajaState {
     double I_e;         // kg-m^2, total moment of inertia of spinning engine components
     double I_p;         // kg-m^2, total moment of inertia of primary components
     double I_s;         // kg-m^2, total moment of inertia of secondary components
+    double I_w;         // kg-m^2, total moment of inertia of all four wheels
     // Primary
     uint8_t N_fly;      // Number of flyweight linkages in primary
     double r_p_inner;   // m, radius where bottom of primary sheaves touch
@@ -89,55 +88,55 @@ struct BajaState {
     // Derived Constants
 
     // Average width of belt
-    constexpr double b() {
+    double b() {
         return (b_min + b_max)/2; 
     }
 
     // Minimum radius for belt on primary sheave
-    constexpr double r_p_min() {
+    double r_p_min() {
         return (std::min(d_p_max, b_min)*0.5)/(tan(phi)) + r_p_inner + h_v*0.5;
     }
 
     // Minimum radius for belt on secondary sheave
-    constexpr double r_s_min() {
+    double r_s_min() {
         return (std::min(d_s_max, b_min)*0.5)/(tan(phi)) + r_s_inner + h_v*0.5;
     }
 
-    constexpr double rho_b() {
+    double rho_b() {
         return m_b/(A_b*L_b0);
     }
 
-    constexpr double theta_s_max() {
+    double theta_s_max() {
         return d_s_max/(r_helix*tan(cvt_tune.theta_helix));
     }
 
     // Derived Variables
 
-    constexpr double throttle_scale(double torque, double u_gas) {
+    double throttle_scale(double torque, double u_gas) {
         return torque*(sin(u_gas*PI*0.5)*(1 - rpm_idle/rpm_gov) + rpm_idle/rpm_gov);
     }
 
-    constexpr double r_p() {
+    double r_p() {
         return clamp(d_p, 0, d_p_max)/tan(phi) + r_p_min();
     }
 
-    constexpr double r_s() {
+    double r_s() {
         return clamp(d_s_max - d_s, 0, d_s_max)/tan(phi) + r_s_min();
     }
 
-    constexpr double alpha() {
+    double alpha() {
         return 2*acos((r_s()-r_p())/L);
     }
 
-    constexpr double beta() {
+    double beta() {
         return 2*acos((r_p()-r_s())/L);
     }
 
-    constexpr double theta_s() {
+    double theta_s() {
         return (d_s)/(r_helix*tan(cvt_tune.theta_helix));
     }
 
-    constexpr double r_fly() {
+    double r_fly() {
         return r_shoulder + L_arm*sin(theta1);
     }
 };
@@ -145,8 +144,9 @@ struct BajaState {
 constexpr size_t BAJA_SIZE = sizeof(BajaState);
 
 // Column units: RPM, N-m
+// First two and last two entries equal value for constant extrapolation
 const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({
-    {0   , 0},
+    {0   , 25.4},
     {1800, 25.4},
     {2000, 25.8},
     {2200, 26.4},
@@ -157,15 +157,15 @@ const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({
     {3200, 25.7},
     {3400, 24.8},
     {3600, 23.9},
-    {3800, 0} // Governor prevents going above 3800, need to verify behavior
+    {3800, 23.9}, // Governor prevents torque increase above 3800, need to verify behavior
 });
 
-const BajaState TR24_STATE = BajaState{
-    .engine_torque_curve=CH440_TORQUE_CURVE,
-    .N_g=8.32,
-    .tire_radius=11.5*IN2M,
-    .mass=500*LBF2KG,
-};
+// const BajaState TR24_STATE = BajaState{
+//     .engine_torque_curve=CH440_TORQUE_CURVE,
+//     .N_g=8.32,
+//     .m_car=500*LBF2KG,
+//     .r_wheel=11.5*IN2M,
+// };
 
 /*
 constexpr CVTConfig GAGED_GX9_CONFIG = {
@@ -201,5 +201,3 @@ double gaged_gx9_primary_ramp_flat(double x) {
     return 0.0;
 }
 */
-
-} // namespace TRB

@@ -3,6 +3,7 @@
 #include <cmath>
 #include "Eigen/Dense"
 #include "util.hpp"
+#include "opt.hpp"
 
 struct VehicleControls {
     double steering = 0;    // -1 to 1
@@ -112,10 +113,6 @@ struct BajaState {
 
     // Derived Variables
 
-    double throttle_scale(double torque, double u_gas) {
-        return torque*(sin(u_gas*PI*0.5)*(1 - rpm_idle/rpm_gov) + rpm_idle/rpm_gov);
-    }
-
     double r_p() {
         return clamp(d_p, 0, d_p_max)/tan(phi) + r_p_min();
     }
@@ -139,12 +136,25 @@ struct BajaState {
     double r_fly() {
         return r_shoulder + L_arm*sin(theta1);
     }
+
+    // Misc
+
+    double throttle_scale(double torque, double u_gas) {
+        return torque*(sin(u_gas*PI*0.5)*(1 - rpm_idle/rpm_gov) + rpm_idle/rpm_gov);
+    }
 };
+
+OptResults<3> solve_flyweight_position(
+    double theta1_guess, double theta2_guess, double d_r_guess,
+    double (*ramp)(double x),
+    double L1, double L2,
+    double d_p, double x_ramp,
+    double r_cage, double r_shoulder
+);
 
 constexpr size_t BAJA_SIZE = sizeof(BajaState);
 
 // Column units: RPM, N-m
-// First two and last two entries equal value for constant extrapolation
 const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({
     {0   , 25.4},
     {1800, 25.4},

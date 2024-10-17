@@ -332,7 +332,7 @@ With these 7 equations, we could in theory solve for every variable, if $ramp(x)
 This nonlinear system must be solved numerically.
 It can be simplified to this system of 3 equations where the variables are $d_r, \theta_1, \theta_2$:
 
-eq1: $0 = L_1*\cos(\theta_1) - x_{ramp} + d_r$
+eq1: $0 = L_1*\cos(\theta_1) - x_{ramp} - d_p + d_r$
 
 eq2: $0 = L_1\sin(\theta_1) + L_2\sin(\theta_2) - r_{cage} + r_{shoulder} + ramp(d_r - L_2\cos(\theta_2))$
 

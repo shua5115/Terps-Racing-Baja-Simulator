@@ -11,8 +11,8 @@ if(WIN32)
 endif()
 
 set(model_src
+src/trb.cpp
 src/util.cpp
-src/opt.cpp
 )
 
 add_executable(test

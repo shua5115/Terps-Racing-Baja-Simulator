@@ -3,18 +3,19 @@
 #include "Eigen/Dense"
 
 #define PI        (3.1415926535897932384626434)
-#define DEG2RAD   (0.0174532925199432957692369)
-#define RAD2DEG   (57.295779513082320876798155)
-#define RPM2RADPS (0.1047197551196597746154214)
-#define RADPS2RPM (9.5492965855137201461330300)
-#define IN2M      (0.0254)
-#define LBF2N     (4.4482216153)
-#define SLUG2KG   (14.593902937)
-#define LBF2KG    (0.45359236844386) // ONLY use for weight under earth's gravity
+#define DEG2RAD   (0.0174532925199432957692369) // rad/deg
+#define RAD2DEG   (57.295779513082320876798155) // deg/rad
+#define RPM2RADPS (0.1047197551196597746154214) // rpm-s/rad
+#define RADPS2RPM (9.5492965855137201461330300) // rad/rpm-s
+#define IN2M      (0.0254)                      // m/in
+#define FT2M      (0.3048)                      // m/ft
+#define LBF2N     (4.4482216153)                // lbf/N
+#define SLUG2KG   (14.593902937)                // kg/slug
+#define LBF2KG    (0.45359236844386)            // lbm/lbf * kg/lbm
 
 // Positive modulo
 template<typename T>
-constexpr T mod(const T i, const T n) {
+constexpr T imod(T i, T n) {
     return (n + (i % n)) % n;
 }
 

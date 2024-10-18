@@ -36,7 +36,8 @@ struct BajaState {
     double r_wheel;     // m, radius of the tires
     double wheelbase;   // m, distance between front and rear wheels
     double com_x;       // m, forward distance from rear wheel to center of mass
-    double com_height;  // m, distance from ground to center of mass 
+    double com_height;  // m, distance from ground to center of mass
+    double theta_hill;  // rad, angle of the ground
     // Powertrain
     double phi;         // rad, half of angle between sheaves
     double L;           // m, distance between primary and secondary
@@ -63,11 +64,13 @@ struct BajaState {
     double L_arm;       // m, length of flyweight arm
     double r_roller;    // m, radius of rollers in primary
     double x_ramp;      // m, offset from flyweight arm pivot to furthest outwards edge of ramp
+    double F1;          // N, Kinetic friction force which opposes shifting
     // Secondary
     double r_s_inner;   // m, radius where bottom of secondary sheaves touch
     double d_s_max;     // m, max linear gap between secondary sheaves
     double d_s_0;       // m, Secondary spring initial displacement
     double r_helix;     // m, Radius of secondary helix ramp
+    double F2;          // N, Kinetic friction force which opposes shifting
 
     // Time-Dependent
 
@@ -75,74 +78,50 @@ struct BajaState {
     double tau_p;       // N-m, torque applied to primary from engine
     double omega_p;     // rad/s, angular velocity of primary
     double omega_s;     // rad/s, angular velocity of secondary
-    double T0;          // N, slack side belt tension
-    double T1;          // N, taut side belt tension
-    double L_b;         // m, current belt length
+    double F_f;         // N, Friction force between sheaves (T1 - T0)
     // Primary
+    double r_p;         // m, radius of belt on primary sheave
     double d_p;         // m, linear displacement of primary sheave during shift
     double d_r;         // m, linear displacement of roller from outermost edge of ramp
     double theta1;      // rad, angle beween flyweight arm and primary axis
     double theta2;      // rad, angle between primary ramp surface normal and primary axis
     // Secondary
-    double d_s;         // rad, linear displacement of secondary sheave during shift
+    double r_s;         // m, radius of belt on secondary sheave
+    double d_s;         // m, linear displacement of secondary sheave during shift
 
     // Derived Constants
 
     // Average width of belt
-    double b() {
+    double b() const {
         return (b_min + b_max)/2; 
     }
 
     // Minimum radius for belt on primary sheave
-    double r_p_min() {
+    double r_p_min() const {
         return (std::min(d_p_max, b_min)*0.5)/(tan(phi)) + r_p_inner + h_v*0.5;
     }
 
     // Minimum radius for belt on secondary sheave
-    double r_s_min() {
+    double r_s_min() const {
         return (std::min(d_s_max, b_min)*0.5)/(tan(phi)) + r_s_inner + h_v*0.5;
     }
 
-    double rho_b() {
+    double rho_b() const {
         return m_b/(A_b*L_b0);
     }
 
-    double theta_s_max() {
+    double theta_s_max() const {
         return d_s_max/(r_helix*tan(cvt_tune.theta_helix));
-    }
-
-    // Derived Variables
-
-    double r_p() {
-        return clamp(d_p, 0, d_p_max)/tan(phi) + r_p_min();
-    }
-
-    double r_s() {
-        return clamp(d_s_max - d_s, 0, d_s_max)/tan(phi) + r_s_min();
-    }
-
-    double alpha() {
-        return 2*acos((r_s()-r_p())/L);
-    }
-
-    double beta() {
-        return 2*acos((r_p()-r_s())/L);
-    }
-
-    double theta_s() {
-        return (d_s)/(r_helix*tan(cvt_tune.theta_helix));
-    }
-
-    double r_fly() {
-        return r_shoulder + L_arm*sin(theta1);
     }
 
     // Misc
 
-    double throttle_scale(double torque, double u_gas) {
+    double throttle_scale(double torque, double u_gas) const {
         return torque*(sin(u_gas*PI*0.5)*(1 - rpm_idle/rpm_gov) + rpm_idle/rpm_gov);
     }
 };
+
+constexpr size_t BAJASTATE_SIZE_CHECK = sizeof(BajaState);
 
 OptResults<3> solve_flyweight_position(
     double theta1_guess, double theta2_guess, double d_r_guess,
@@ -152,7 +131,21 @@ OptResults<3> solve_flyweight_position(
     double r_cage, double r_shoulder
 );
 
-constexpr size_t BAJA_SIZE = sizeof(BajaState);
+// Indices for variables within CVT state vector
+enum CVTIndex {
+    R_P,
+    R_S,
+    F_F,
+    CVT_INDEX_COUNT
+};
+using CVTState = Eigen::Vector<double, CVT_INDEX_COUNT>;
+
+// Calculates the current CVT shift ratio, along with other variables
+OptResults<CVT_INDEX_COUNT> solve_cvt_shift(const BajaState &baja_state);
+
+// Calculates the change in vehicle speed due to the applied force,
+// then adjusts speeds of spinning components to conserve momentum.
+void correct_momentum(const CVTState &cvt_state, BajaState &baja_state);
 
 // Column units: RPM, N-m
 const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({

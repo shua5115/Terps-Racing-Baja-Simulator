@@ -116,16 +116,17 @@ $N_p = \frac{\alpha(F_f)}{\sin(\phi)\ln(F_f + 1)} - \frac{\alpha}{\sin(\phi)}(T_
 # Forces and Moments
 Formula | Description
 ---|---:
-$F_f \le N_p \mu_b$ | No-slip condition
+$\tau_e/r_p \le N_p \mu_b$ | No-slip condition
 $T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$ | Slack side tension
-$F_f = T_1 - T_0 = \tau_p/r_p + \tau_s/r_s$ | Relation between slack and taut tension under no-slip condition
+$F_f = T_1 - T_0 = \tau_e/r_p + \tau_s/r_s$ | Relation between slack and taut tension under no-slip condition
 $F_f = T_1 - T_0 = \mu_b N_p + \tau_s/r_s$ | Relation between slack and taut tension under slipping condition
+$F_f = T_1 - T_0 = \min(\mu_b N_p, \tau_e/r_p) + \tau_s/r_s$ | Implicit conditional version
 **Primary Subsystem**
 $F_{sp} = k_p (d_{0p} + d_p)$ | Force from linear primary spring
 $F_{bp} = \frac{\alpha(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\alpha}{\tan(\phi)}(T_0 - 1)$ | Force from belt
 $F_{flyarm} = \frac{0.25 m_{fly}(r_{shoulder} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$ | Force from flyweights and ramp
 $F1 = ?$ | unknown constant friction force, always opposing shifting
-$F2 = ?*\omega_p^2$ | unknown friction force proportional to centripetal force, opposing shifting
+$F2*\omega_p^2 = ?$ | unknown friction force proportional to centripetal force, opposing shifting
 **Secondary Subsystem**
 $F_{ss} = k_s (d_{0s} + d_s)$ | Force from linear secondary spring
 $F_{bs} = \frac{\beta(F_{f,s})}{\tan(\phi)\ln(F_{f,s} + 1)} - \frac{\beta}{\tan(\phi)}(T_0 - 1)$ | Force from belt

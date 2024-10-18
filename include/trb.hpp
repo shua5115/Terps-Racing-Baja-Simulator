@@ -55,7 +55,7 @@ struct BajaState {
     double I_s;         // kg-m^2, total moment of inertia of secondary components
     double I_w;         // kg-m^2, total moment of inertia of all four wheels
     // Primary
-    uint8_t N_fly;      // Number of flyweight linkages in primary
+    double N_fly;       // Number of flyweight linkages in primary
     double r_p_inner;   // m, radius where bottom of primary sheaves touch
     double d_p_max;     // m, max linear gap between primary sheaves
     double d_p_0;       // m, primary spring initial displacement
@@ -75,7 +75,6 @@ struct BajaState {
     // Time-Dependent
 
     double tau_s;       // N-m, torque applied to secondary from gearbox
-    double tau_p;       // N-m, torque applied to primary from engine
     double omega_p;     // rad/s, angular velocity of primary
     double omega_s;     // rad/s, angular velocity of secondary
     double F_f;         // N, Friction force between sheaves (T1 - T0)
@@ -162,6 +161,9 @@ const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({
     {3600, 23.9},
     {3800, 23.9}, // Governor prevents torque increase above 3800, need to verify behavior
 });
+
+// BajaState representing the initial state of the TR24 baja car with an unmodified Gaged GX9 CVT
+extern const BajaState TR24_GAGED_GX9;
 
 // const BajaState TR24_STATE = BajaState{
 //     .engine_torque_curve=CH440_TORQUE_CURVE,

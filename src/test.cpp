@@ -48,9 +48,14 @@ void primary_roller_solver() {
     ASSERT(S.f_of_x <= 1e-6);
 }
 
+void cvt_shift_solver() {
+
+}
+
 TestCase tests[] = {
     TESTFN(engine_rpm_lookup),
     TESTFN(primary_roller_solver),
+    TESTFN(cvt_shift_solver),
 };
 
 int main() {

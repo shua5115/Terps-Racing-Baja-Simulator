@@ -1,5 +1,76 @@
 #include "trb.hpp"
 
+const BajaState TR24_GAGED_GX9 = {
+    .engine_torque_curve=CH440_TORQUE_CURVE,
+    .controls={
+        .steering=0.0,
+        .throttle=1.0,
+        .brake_pedal=0.0,
+        .awd_lever=0.0,
+    },
+    // Using best accel tune from 2024 season
+    .cvt_tune = {
+        .p_ramp_fn = [](double x){return 0.0;},
+        .k_p = 100, // VERIFY!!!!
+        .m_fly = 0.536,
+        .k_s = 100, // VERIFY!!!!
+        .kappa_s = 100, // VERIFY!!!
+        .theta_s_0 = 0.5, // VERIFY!!!
+        .theta_helix = DEG2RAD*33,
+    },
+    .rpm_gov = 3800,
+    .rpm_idle = 1800,
+    .N_g = 8.32,
+    .m_car = 500*LBF2KG,
+    .r_wheel = 12.5*IN2M,
+    .wheelbase = 1.5003,
+    .com_x = 0.5, // estimate
+    .com_height = 0.2, // estimate
+    .theta_hill = 0,
+    .phi = 12.5*DEG2RAD, // VERIFY!!!!!
+    .L = 9.1*IN2M,
+    .L_b0 = 28*IN2M,
+    .b_min = 0.4*IN2M,
+    .b_max = 0.7*IN2M,
+    .h_v = IN2M*0.675*7/8,
+    .h = IN2M*7/8,
+    .A_b = (IN2M*0.675*7/8)*(0.4*IN2M),
+    .m_b = LBF2KG*0.6,
+    .E_b = 13.8e3*LBF2N/(IN2M*IN2M), // Pa = psi * N/lbf * in^2/m^2, around 95 MPa
+    .mu_b = 0.13, // from WVU paper
+    .I_e = 1,
+    .I_p = 1,
+    .I_s = 1,
+    .I_w = 1,
+    .N_fly = 4,
+    .r_p_inner = 0.75*IN2M, // VERIFY
+    .d_p_max = 0.75*IN2M, // VERIFY
+    .d_p_0 = (2.5 - 1.875)*IN2M, // VERIFY, 2.5 is the guessed spring uncompressed length
+    .r_cage = 65.23137756e-3,
+    .r_shoulder = 41.87742519e-3,
+    .L_arm = 33.02e-3,
+    .r_roller = 6.35e-3,
+    .x_ramp = 37.76893878e-3,
+    .F1 = 0,
+    .r_s_inner = 47.625e-3,
+    .d_s_max = 18e-3,
+    .d_s_0 = (2.5-1.825)*IN2M,
+    .r_helix = 46.0375e-3,
+    .F2 = 0,
+    .tau_s = 0,
+    .omega_p = 0,
+    .omega_s = 0,
+    .F_f = 0,
+    .r_p = IN2M*1.1875,
+    .d_p = 0,
+    .d_r = 0,
+    .theta1 = 0, // this is wrong, but the solver will correct this
+    .theta2 = 0, // this is wrong, but the solver will correct this
+    .r_s = IN2M*3.3125,
+    .d_s = 0,
+
+};
+
 OptResults<3> solve_flyweight_position(
     double theta1_guess, double theta2_guess, double d_r_guess,
     double (*ramp)(double x),
@@ -49,7 +120,7 @@ OptResults<CVT_INDEX_COUNT> solve_cvt_shift(const BajaState &baja) {
     double tan_phi = tan(phi);
     double tan_helix = tan(baja.cvt_tune.theta_helix);
 
-    ScalarFn<8> objective = [&](CVTState x){
+    ScalarFn<CVT_INDEX_COUNT> objective = [&](CVTState x){
         double r_p = x(R_P);
         double r_s = x(R_S);
         double F_f = x(F_F);
@@ -105,4 +176,6 @@ OptResults<CVT_INDEX_COUNT> solve_cvt_shift(const BajaState &baja) {
 
         return eq1*eq1 + eq2*eq2 + eq3*eq3;
     };
+
+    return minimize_gradient_descent(objective, x0);
 }

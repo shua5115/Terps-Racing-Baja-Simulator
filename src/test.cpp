@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include "trb.hpp"
 
 // bs to define an assert macro
@@ -25,6 +26,7 @@ void engine_rpm_lookup() {
 }
 
 void primary_roller_solver() {
+    auto start = std::chrono::high_resolution_clock::now();
     double theta1_guess = 0;
     double theta2_guess = 0;
     double d_r_guess = 0;
@@ -41,7 +43,9 @@ void primary_roller_solver() {
         ramp,
         L1, L2, d_p, x_ramp, r_cage, r_shoulder
     );
-
+    auto finish = std::chrono::high_resolution_clock::now();
+    auto dur = finish - start;
+    printf("Finished in %f us\n", dur*0.001);
     printf("Solver %s after %llu iterations\n", S.converged ? "converged" : "did not converge", S.iterations);
     printf("Error: %e = %e^2\n", S.f_of_x, sqrt(S.f_of_x));
     printf("Solution: theta1=%f deg, theta2=%f deg, d_r=%f m]\n", S.x(0)*RAD2DEG, S.x(1)*RAD2DEG, S.x(2));

@@ -10,10 +10,19 @@ const BajaState TR24_GAGED_GX9 = {
     },
     // Using best accel tune from 2024 season
     .cvt_tune = {
-        .p_ramp_fn = [](double x){return 0.0;},
-        .k_p = 100, // VERIFY!!!!
+        .p_ramp_fn = [](double x){
+            // measured from scan, best represented as piecewise function
+            // so the function is continuous
+            // with each piecewise section having a continous derivative
+            if (x < 0) return 17.5;
+            if (x < 5) return remap(x, 0, 5, 17.5, 16.475);
+            if (x < 30.5) return 0.01*x*x-0.805*x+20.25; // intersects (5, 16.475) and (30.5, 5)
+            if (x < 31) return remap(x, 30.5, 31, 5, 0);
+            return 0.0;
+        },
+        .k_p = 60*LBF2N/IN2M,
         .m_fly = 0.536,
-        .k_s = 100, // VERIFY!!!!
+        .k_s = 20*LBF2N/IN2M,
         .kappa_s = 100, // VERIFY!!!
         .theta_s_0 = 0.5, // VERIFY!!!
         .theta_helix = DEG2RAD*33,

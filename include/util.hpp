@@ -2,7 +2,7 @@
 
 #include "Eigen/Dense"
 
-#define PI        (3.1415926535897932384626434)
+#define PI        (3.1415926535897932384626434) // precision? yes.
 #define DEG2RAD   (0.0174532925199432957692369) // rad/deg
 #define RAD2DEG   (57.295779513082320876798155) // deg/rad
 #define RPM2RADPS (0.1047197551196597746154214) // rpm-s/rad

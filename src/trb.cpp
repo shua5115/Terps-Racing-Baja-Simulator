@@ -166,7 +166,8 @@ OptResults<CVT_INDEX_COUNT> solve_cvt_shift(const BajaState &baja) {
         // Three variables, so three equations are needed:
         double eq1 = tau_p/r_p + baja.tau_s/r_s - F_f; // Sum of forces between sheaves
         double eq2 = F_sp + F_bp - 4*F_flyarm; // Sum of forces in primary
-        // F1 always resists shifting, bringing forces closer to equilibrium, or reaching equilibrium if close enough
+        double eq3 = F_ss - F_bs + F_helix; // Sum of forces in secondary
+        // F1 and F2 always resist shifting, bringing forces closer to equilibrium, or reaching equilibrium if close enough
         if (eq2 > F1) {
             eq2 -= F1;
         } else if(eq2 < -F1) {
@@ -174,7 +175,6 @@ OptResults<CVT_INDEX_COUNT> solve_cvt_shift(const BajaState &baja) {
         } else {
             eq2 = 0;
         }
-        double eq3 = F_ss - F_bs + F_helix - F2; // Sum of forces in secondary
         if (eq3 > F2) {
             eq3 -= F2;
         } else if(eq3 < -F2) {

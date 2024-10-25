@@ -73,6 +73,7 @@ Formula|Unit|Description
 $b = \frac{b_{min} + b_{max}}{2}$ | m | Average width of belt V-shaped section
 $r_{p,min} = \frac{\min(d_{p,max},b_{min})/2}{\tan(\phi)} + r_{inner,p} + h_v/2$ | m | Minimum radius of belt around primary
 $r_{s,min} = \frac{\min(d_{s,max},b_{min})/2}{\tan(\phi)} + r_{inner,s} + h_v/2$ | m | Minimum radius of belt around secondary
+$r_{p,max} = r_{p,min} + \frac{}{}$ | m | Maximum radius of belt around primary
 $\rho_b = \frac{m_b}{A_b L_{b0}}$ | kg/m^3 | Density of the belt
 $\theta_{s,max} = \frac{d_{s,max}}{r_{helix}\tan(\theta_{helix})}$ | rad | Max angular displacement of secondary sheave and torsional spring
 
@@ -117,7 +118,7 @@ $N_p = \frac{\alpha(F_f)}{\sin(\phi)\ln(F_f + 1)} - \frac{\alpha}{\sin(\phi)}(T_
 Formula | Description
 ---|---:
 $\tau_e/r_p \le N_p \mu_b$ | No-slip condition
-$T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$ | Slack side tension
+$T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$ | Slack side tension, if belt can stretch
 $F_f = T_1 - T_0 = \tau_e/r_p + \tau_s/r_s$ | Relation between slack and taut tension under no-slip condition
 $F_f = T_1 - T_0 = \mu_b N_p + \tau_s/r_s$ | Relation between slack and taut tension under slipping condition
 $F_f = T_1 - T_0 = \min(\mu_b N_p, \tau_e/r_p) + \tau_s/r_s$ | Implicit conditional version
@@ -146,15 +147,18 @@ Formula | Description
 
 $r_p = d_p/\tan(\phi) + r_{p,min}$
 
-$r_s = (\min(d_{s,max}, b_{min}) - d_s)/\tan(\phi) + r_{s,min}$
+$r_s = (d_{s,max} - d_s)/\tan(\phi) + r_{s,min}$
 
 $d_p = \tan(\phi)(r_p - r_{p,min})$
 
-$d_s = \min(d_{s,max}, b_{min}) - \tan(\phi)(r_s - r_{s,min})$
+$d_s = d_{s,max} - \tan(\phi)(r_s - r_{s,min})$
 
-$\tan(\phi) = \frac{\min(d_{max},b_{min})/2}{r_{absmin} - r_{inner} - h_v/2}$
+$r_{min} = r_{inner} + h_v/2$
 
-$r_{absmin} = \frac{\min(d_{max},b_{min})/2}{\tan(\phi)} + r_{inner} + h_v/2$ Adding $h_v/2$ to account for thickness of belt
+$r_{p,max} = d_{p,max}/\tan(\phi) + r_{p,min}$
+
+$r_{s,max} = d_{s,max}/\tan(\phi) + r_{s,min}$
+
 
 # Derivation of $\theta_s$
 
@@ -277,8 +281,8 @@ $F_f = \mu_b N$
 
 # Derivation of $T_0$
 
-We are basing the slack tension of the belt on the spring-like behavior of materials.
-When the belt stretches, there is a static tension through the whole belt, which is T0.
+If the basis of slack tension is the spring-like behavior of the belt stretching,
+then wen the belt stretches, there is a static tension through the whole belt, which is T0.
 
 $T_0 = E_b A_b * (L_b - L_{b0}) / L_{b0}$
 
@@ -298,6 +302,40 @@ $T_c = \rho_b A_b (r_s\omega_s)^2$ Secondary-based linear belt speed is used, be
 
 $T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$ 
 
+
+However, after an initial implementation of the numeric solution to the CVT shift, it was determined that the belt stretching is the third degree of freedom in the system which introduces instability in the solver. The instabilty comes from the change in belt stretch being on a much smaller order of magnitude to the other values. So, in order to make the system's numerical solution with gradient descent more stable, the assumption that the belt doesn't stretch may allow the system to be more solvable.
+
+No belt stretch assumption:
+
+$L_{b0} = r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2}$
+
+Assuming that the belt doesn't stretch does not mean there is no static tension, it is just that the static tension is like a reaction force between the primary and secondary. Keeping in mind the derivation of F_b, the force on the sheave from the belt is correlated with T0 and F_f.
+
+If we constrain T1, T0, and by extension F_f, to be equal between the sheaves, then we get the following relation:
+
+$\frac{F_f}{\ln(F_f + 1)} - F_{bp} \frac{\tan(\phi)}{\alpha} - 1 = T_0$
+
+$\frac{F_f}{\ln(F_f + 1)} - F_{bs} \frac{\tan(\phi)}{\beta} - 1 = T_0$
+
+$\frac{F_f}{\ln(F_f + 1)} - F_{bp} \frac{\tan(\phi)}{\alpha} - 1 = \frac{F_f}{\ln(F_f + 1)} - F_{bs} \frac{\tan(\phi)}{\beta} - 1$
+
+$F_{bp} \frac{\tan(\phi)}{\alpha} = F_{bs} \frac{\tan(\phi)}{\beta}$
+
+$\frac{F_{bp}}{\alpha} = \frac{F_{bs}}{\beta}$
+
+Substituting this relation into the force balance equations for the primary and secondary:
+
+$0 = F_{sp} + F_{bp} - 4F_{flyarm}$
+
+$0 = F_{ss} - F_{bp} \frac{\alpha}{\beta} + F_{helix}$
+
+$4F_{flyarm} - F_{sp} = (F_{ss} + F_{helix}) \frac{\beta}{\alpha}$
+
+$0 = (F_{ss} + F_{helix}) \frac{\beta}{\alpha} - 4F_{flyarm} + F_{sp}$
+
+Now we have a force balance equation that relates the primary and the secondary that does not depend on belt tension.
+However, the belt tension is required to determine whether or not the belt is slipping, so it is possible that the system of equations must be solved twice:
+once under the no slipping assumption, then, if the system should be slipping, once more under the slipping assumption.
 
 # Derivation of $\theta_1, \theta_2, d_p$
 

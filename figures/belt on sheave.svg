@@ -31,7 +31,8 @@
      inkscape:window-x="-12"
      inkscape:window-y="-12"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer2" />
+     inkscape:current-layer="layer2"
+     showgrid="false" />
   <defs
      id="defs1">
     <marker
@@ -193,14 +194,15 @@
     <text
        xml:space="preserve"
        style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       x="28.428764"
-       y="43.240562"
-       id="text18"><tspan
+       x="-47.281075"
+       y="32.769455"
+       id="text18"
+       transform="rotate(-90)"><tspan
          sodipodi:role="line"
          id="tspan18"
          style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2"
-         x="28.428764"
-         y="43.240562">r_p</tspan></text>
+         x="-47.281075"
+         y="32.769455">r_min</tspan></text>
     <path
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.199999;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:0.599999, 0.599999;stroke-dashoffset:0;stroke-opacity:1"
        d="m 33.679695,56.328541 34.295251,0.02168"
@@ -230,7 +232,7 @@
          id="tspan42"
          style="stroke-width:0.2"
          x="-52.956261"
-         y="41.690765">r_absmin</tspan></text>
+         y="41.690765">r_inner</tspan></text>
     <path
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:0.60000001,0.60000001;stroke-dashoffset:0;stroke-opacity:1"
        d="M 59.019101,36.996708 V 53.589822"
@@ -290,24 +292,19 @@
          x="45.984547"
          y="54.803486">d_max</tspan></text>
     <path
-       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.199999;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:0.599999, 0.599999;stroke-dashoffset:0;stroke-opacity:1"
-       d="m 50.914517,50.145828 17.06061,0.03966"
-       id="path4"
-       sodipodi:nodetypes="cc" />
-    <path
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.200002;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker-start:url(#Triangle);marker-end:url(#marker7)"
-       d="m 67.359815,50.908535 v 4.696957"
+       d="m 61.50196,30.11547 v 6.174227"
        id="path5" />
     <text
        xml:space="preserve"
        style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       x="68.2911"
-       y="54.14378"
+       x="61.97366"
+       y="34.606243"
        id="text5"><tspan
          sodipodi:role="line"
          id="tspan5"
          style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2"
-         x="68.2911"
-         y="54.14378">r_inner</tspan></text>
+         x="61.97366"
+         y="34.606243">h_v/2</tspan></text>
   </g>
 </svg>

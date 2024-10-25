@@ -62,3 +62,38 @@ template<typename F>
 double diff_central(F f, double x, double step) {
     return (f(x+step) - f(x-step))*0.5/(step);
 }
+
+template<typename F>
+double root_bisection(F f, double x_lo, double x_hi, size_t N) {
+    double x_mid, y_lo, y_hi;
+    y_lo = f(x_lo);
+    y_hi = f(x_hi);
+    for (size_t i = 0; i < N; i++) {
+        x_mid = 0.5*(x_lo + x_hi);
+        double y_mid = f(x_mid);
+        if (y_lo*y_mid < 0.0) {
+            x_hi = x_mid;
+        } else if (y_hi*y_mid < 0.0) {
+            x_lo = x_mid;
+        } else {
+            return x_mid;
+        }
+    }
+    x_mid = 0.5*(x_lo + x_hi);
+    return x_mid;
+}
+
+template<typename F>
+double root_secant(F f, double x0, double x1, unsigned int N) {
+    double y0 = f(x0);
+    double y1 = f(x1);
+    for (size_t i = 0; i < N; i++) {
+        if (fabs(y1-y0) == 0) break;
+        double x_next = x1 - y1*(x1-x0)/(y1-y0);
+        x0 = x1;
+        x1 = x_next;
+        y0 = y1;
+        y1 = f(x1);
+    }
+    return (x0+x1)*0.5;
+}

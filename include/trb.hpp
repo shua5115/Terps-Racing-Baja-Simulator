@@ -63,7 +63,7 @@ struct BajaState {
     double r_shoulder;  // m, radius from primary axis to flyweight arm pivot
     double L_arm;       // m, length of flyweight arm
     double r_roller;    // m, radius of rollers in primary
-    double x_ramp;      // m, offset from flyweight arm pivot to furthest outwards edge of ramp
+    double x_ramp;      // m, offset from flyweight arm pivot to furthest outwards edge of ramp, at low shift displacement
     double F1;          // N, Kinetic friction force which opposes shifting
     // Secondary
     double r_s_inner;   // m, radius where bottom of secondary sheaves touch
@@ -97,12 +97,12 @@ struct BajaState {
 
     // Minimum radius for belt on primary sheave
     double r_p_min() const {
-        return (std::min(d_p_max, b_min)*0.5)/(tan(phi)) + r_p_inner + h_v*0.5;
+        return r_p_inner + h_v*0.5;
     }
 
     // Minimum radius for belt on secondary sheave
     double r_s_min() const {
-        return (std::min(d_s_max, b_min)*0.5)/(tan(phi)) + r_s_inner + h_v*0.5;
+        return r_s_inner + h_v*0.5;
     }
 
     double rho_b() const {
@@ -130,6 +130,10 @@ OptResults<3> solve_flyweight_position(
     double r_cage, double r_shoulder
 );
 
+// Solve secondary radius given primary radius using root finding.
+// Per testing, numerical error is less than floating point error after N=8 for this function for all reasonable values of r_p.
+double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0, unsigned int N);
+
 // Indices for variables within CVT state vector
 enum CVTIndex {
     R_P,
@@ -141,6 +145,8 @@ using CVTState = Eigen::Vector<double, CVT_INDEX_COUNT>;
 
 // Calculates the current CVT shift ratio, along with other variables
 OptResults<CVT_INDEX_COUNT> solve_cvt_shift(const BajaState &baja_state);
+
+OptResults<4> solve_cvt_shift_no_slip(const BajaState &baja_state);
 
 // Calculates the change in vehicle speed due to the applied force,
 // then adjusts speeds of spinning components to conserve momentum.

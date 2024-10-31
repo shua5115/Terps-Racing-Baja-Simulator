@@ -97,12 +97,12 @@ struct BajaState {
 
     // Minimum radius for belt on primary sheave
     double r_p_min() const {
-        return r_p_inner + h_v*0.5;
+        return r_p_inner + 0.3825*h_v;
     }
 
     // Minimum radius for belt on secondary sheave
     double r_s_min() const {
-        return r_s_inner + h_v*0.5;
+        return r_s_inner + 0.3825*h_v;
     }
 
     double rho_b() const {
@@ -115,6 +115,8 @@ struct BajaState {
 
     // Misc
 
+    void set_ratio_from_d_p(double d);
+    
     double throttle_scale(double torque, double u_gas) const {
         return torque*(sin(u_gas*PI*0.5)*(1 - rpm_idle/rpm_gov) + rpm_idle/rpm_gov);
     }
@@ -134,23 +136,16 @@ OptResults<3> solve_flyweight_position(
 // Per testing, numerical error is less than floating point error after N=8 for this function for all reasonable values of r_p.
 double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0, unsigned int N);
 
-// Indices for variables within CVT state vector
-enum CVTIndex {
-    R_P,
-    R_S,
-    F_F,
-    CVT_INDEX_COUNT
-};
-using CVTState = Eigen::Vector<double, CVT_INDEX_COUNT>;
+double solve_cvt_shift(const BajaState &baja_state);
 
 // Calculates the current CVT shift ratio, along with other variables
-OptResults<CVT_INDEX_COUNT> solve_cvt_shift(const BajaState &baja_state);
+OptResults<6> solve_cvt_shift_unstable(const BajaState &baja_state);
 
-OptResults<4> solve_cvt_shift_no_slip(const BajaState &baja_state);
+OptResults<2> solve_cvt_shift_no_stretch(const BajaState &baja_state);
 
 // Calculates the change in vehicle speed due to the applied force,
 // then adjusts speeds of spinning components to conserve momentum.
-void correct_momentum(const CVTState &cvt_state, BajaState &baja_state);
+// void correct_momentum(const CVTState &cvt_state, BajaState &baja_state);
 
 // Column units: RPM, N-m
 const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({

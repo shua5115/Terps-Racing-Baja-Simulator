@@ -94,7 +94,7 @@ OptResults<N> minimize_gradient_golden(ScalarFn<N> f, Eigen::Vector<double, N> x
     size_t iters = 0;
     bool converged = true;
     while (true) {
-        std::cout << "Iteration " << iters << ": x=[" << Eigen::Transpose(x) << "], f=" << f_val << "\n";
+        // std::cout << "Iteration " << iters << ": x=[" << Eigen::Transpose(x) << "], f=" << f_val << "\n";
         bool isNaN = false;
         for (Eigen::Index i = 0; i < N; i++) {
             if (std::isnan(x(i)) || std::isnan(grad(i))) {
@@ -125,7 +125,7 @@ OptResults<N> minimize_gradient_golden(ScalarFn<N> f, Eigen::Vector<double, N> x
         f_val = new_f_val;
         grad = gradient(f, x, grad_step);
     }
-    std::cout << "Result: " << iters << ": x=[" << Eigen::Transpose(x) << "], f=" << f_val << "\n";
+    // std::cout << "Result after iter " << iters << ": x=[" << Eigen::Transpose(x) << "], f=" << f_val << "\n";
     OptResults<N> results;
     results.x = x;
     results.f_of_x = f_val;

@@ -35,6 +35,12 @@ constexpr double clamp(double v, double lo, double hi) {
     return std::min(std::max(v, lo), hi);
 }
 
+constexpr double sign(double x) {
+    if (x < 0) return -1;
+    if (x > 0) return 1;
+    return 0;
+}
+
 // hack to make std::sort work
 namespace Eigen {
     template<class T>
@@ -71,13 +77,15 @@ double root_bisection(F f, double x_lo, double x_hi, size_t N) {
     for (size_t i = 0; i < N; i++) {
         x_mid = 0.5*(x_lo + x_hi);
         double y_mid = f(x_mid);
-        if (y_lo*y_mid < 0.0) {
+        double sign_left = sign(y_lo)*sign(y_mid);
+        double sign_right = sign(y_hi)*sign(y_mid);
+        if (sign_left < 0.0) {
             x_hi = x_mid;
-        } else if (y_hi*y_mid < 0.0) {
+        } else if (sign_right < 0.0) {
             x_lo = x_mid;
-        } else {
+        } else if (sign_left != 0 && sign_right != 0){
             return x_mid;
-        }
+        } else break;
     }
     x_mid = 0.5*(x_lo + x_hi);
     return x_mid;
@@ -88,7 +96,7 @@ double root_secant(F f, double x0, double x1, unsigned int N) {
     double y0 = f(x0);
     double y1 = f(x1);
     for (size_t i = 0; i < N; i++) {
-        if (fabs(y1-y0) == 0) break;
+        if (abs(y1-y0) == 0) break;
         double x_next = x1 - y1*(x1-x0)/(y1-y0);
         x0 = x1;
         x1 = x_next;
@@ -96,4 +104,14 @@ double root_secant(F f, double x0, double x1, unsigned int N) {
         y1 = f(x1);
     }
     return (x0+x1)*0.5;
+}
+
+template<typename F>
+double root_newton(F f, double x, double diff_step, size_t N) {
+    for (size_t i = 0; i < N; i++) {
+        double dfdx = diff_central(f, x, diff_step);
+        if (dfdx == 0) break;
+        x = x - f(x)/dfdx;
+    }
+    return x;
 }

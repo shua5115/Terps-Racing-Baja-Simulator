@@ -28,3 +28,16 @@ double matrix_linear_lookup(Eigen::MatrixX2d mat, double val, bool extrapolate) 
     }
     return mat(len-1, 1);
 }
+
+std::tuple<double, double> minmax(const Eigen::MatrixXd &m) {
+    double min = INFINITY;
+    double max = -INFINITY;
+    for(Eigen::Index i = 0; i < m.rows(); i++) {
+        for(Eigen::Index j = 0; j < m.cols(); j++) {
+            double val = m(i, j);
+            if (val < min) min = val;
+            if (val > max) max = val;
+        }
+    }
+    return std::tuple(min, max);
+};

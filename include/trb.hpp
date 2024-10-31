@@ -136,7 +136,7 @@ OptResults<3> solve_flyweight_position(
 // Per testing, numerical error is less than floating point error after N=8 for this function for all reasonable values of r_p.
 double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0, unsigned int N);
 
-double solve_cvt_shift(const BajaState &baja_state);
+double solve_cvt_shift(const BajaState &baja_state, bool debug = false);
 
 // Calculates the current CVT shift ratio, along with other variables
 OptResults<6> solve_cvt_shift_unstable(const BajaState &baja_state);

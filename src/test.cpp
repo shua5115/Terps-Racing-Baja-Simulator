@@ -116,10 +116,10 @@ void cvt_shift_vs_torque() {
     printf("\nomega_p, tau_s, d_p, d_s, ratio, F_sp, F_flyarm, F_ss, F_helix\n");
     for(int i = 0; i < N; i++) {
         for(int j = 0; j < N; j++) {
-            state.d_p = state.d_p_max/2; // reset for consistency
+            // state.d_p = state.d_p_max/2; // reset for consistency
             state.omega_p = remap(i, 0, N-1, 1800, 3000)*RPM2RADPS;
             state.tau_s = remap(j, 0, N-1, 0.5*2*18.5*LBF2N/FT2M, 2*18.5*LBF2N/FT2M);
-            double d_p = solve_cvt_shift(state);
+            double d_p = solve_cvt_shift(state, true);
             state.set_ratio_from_d_p(d_p);
         }
     }

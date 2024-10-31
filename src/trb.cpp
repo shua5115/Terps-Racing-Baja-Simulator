@@ -132,7 +132,7 @@ double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0
     return root_secant(belt_err, r_s_min, r_s_max, N);
 }
 
-double solve_cvt_shift(const BajaState &baja) {
+double solve_cvt_shift(const BajaState &baja, bool debug) {
     // Precalculate derived constants
     double tau_e = matrix_linear_lookup(baja.engine_torque_curve, std::max(RADPS2RPM*baja.omega_p, baja.rpm_idle));
     tau_e = baja.throttle_scale(tau_e, baja.controls.throttle);
@@ -198,14 +198,18 @@ double solve_cvt_shift(const BajaState &baja) {
         } else {
             eq1 = 0;
         }
-        // printf("d_p=%f, d_s=%f, ratio=%f, f=%f\t wrap=%f, F_sp=%f, F_fly=%f, F_ss=%f, F_helix=%f\n", d_p, d_s, r_s/r_p, eq1, beta/alpha, F_sp, F_flyarm, F_ss, F_helix);
+
+        if (debug){
+            printf("d_p=%f, d_s=%f, ratio=%f, f=%f\t wrap=%f, F_sp=%f, F_fly=%f, F_ss=%f, F_helix=%f\n",
+                d_p, d_s, r_s/r_p, eq1, beta/alpha, F_sp, F_flyarm, F_ss, F_helix);
+        }
 
         return eq1;
     };
 
     // Sample range of objective function looking for a sign change
     //printf("Searching for sign change:\n");
-    int N = 64;
+    int N = 3;
     double eq_prev = objective(0);
     double d_p_prev = d_p_max;
     double d_p_cur = 0;
@@ -238,18 +242,19 @@ double solve_cvt_shift(const BajaState &baja) {
         // printf("Secant result: d_p=%f, f=%f\n", S, objective(S));;
     }
 
-    double d_p = S;
-    double r_p = d_p*inv_tan_phi + r_p_min;
-    double r_s = solve_r_s(r_p, r_s_min, r_s_min + d_s_max*inv_tan_phi, L, baja.L_b0, 15);
-    double d_s = d_s_max - (r_s - r_s_min)*tan_phi;
-    double F_sp = baja.cvt_tune.k_p*(baja.d_p_0 + d_p);
-    double F_flyarm = (baja.cvt_tune.m_fly*(baja.r_shoulder + baja.L_arm*sin(theta1))*baja.omega_p*baja.omega_p*L1*cos(theta1)*cos(theta2))
-        /(L1*sin(theta1 + theta2) + L2*sin(2*theta2));
-    // Secondary subsystem forces
-    double F_ss = baja.cvt_tune.k_s*(baja.d_s_0 + d_s);
-    double tau_ss = baja.cvt_tune.kappa_s*(baja.cvt_tune.theta_s_0 + d_s/(baja.r_helix*tan_helix));
-    double F_helix = (baja.tau_s*0.5 + tau_ss)/(baja.r_helix*tan_helix);
-    printf("%f, %f, %f, %f, %f, %f, %f, %f, %f\n", baja.omega_p, baja.tau_s, d_p, d_s, r_s/r_p, F_sp, F_flyarm, F_ss, F_helix);
-
+    if(debug) {
+        double d_p = S;
+        double r_p = d_p*inv_tan_phi + r_p_min;
+        double r_s = solve_r_s(r_p, r_s_min, r_s_min + d_s_max*inv_tan_phi, L, baja.L_b0, 15);
+        double d_s = d_s_max - (r_s - r_s_min)*tan_phi;
+        double F_sp = baja.cvt_tune.k_p*(baja.d_p_0 + d_p);
+        double F_flyarm = (baja.cvt_tune.m_fly*(baja.r_shoulder + baja.L_arm*sin(theta1))*baja.omega_p*baja.omega_p*L1*cos(theta1)*cos(theta2))
+            /(L1*sin(theta1 + theta2) + L2*sin(2*theta2));
+        // Secondary subsystem forces
+        double F_ss = baja.cvt_tune.k_s*(baja.d_s_0 + d_s);
+        double tau_ss = baja.cvt_tune.kappa_s*(baja.cvt_tune.theta_s_0 + d_s/(baja.r_helix*tan_helix));
+        double F_helix = (baja.tau_s*0.5 + tau_ss)/(baja.r_helix*tan_helix);
+        printf("%f, %f, %f, %f, %f, %f, %f, %f, %f\n", baja.omega_p, baja.tau_s, d_p, d_s, r_s/r_p, F_sp, F_flyarm, F_ss, F_helix);
+    }
     return S;
 }

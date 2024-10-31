@@ -1,3 +1,5 @@
+// This is what I call "text purgatory", text that goes unused but may be useful in the future
+
 #include "trb.hpp"
 
 // void cvt_shift_solver_belt_stretch() {

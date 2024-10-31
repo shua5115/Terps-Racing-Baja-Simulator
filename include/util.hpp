@@ -1,5 +1,6 @@
 #pragma once
 
+#include <tuple>
 #include "Eigen/Dense"
 
 #define PI        (3.1415926535897932384626434) // precision? yes.
@@ -62,6 +63,8 @@ inline void matrix_sort_cols(Eigen::MatrixXd mat, Eigen::Index row) {
 // 1-d linear interpolation lookup
 // Matrix should have first column sorted in increasing order
 double matrix_linear_lookup(Eigen::MatrixX2d mat, double val, bool extrapolate = false);
+
+std::tuple<double, double> minmax(const Eigen::MatrixXd &m);
 
 // Finds the slope of an arbitrary 1-D function at input x numerically using two-sided finite difference.
 template<typename F>

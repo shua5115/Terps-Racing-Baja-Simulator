@@ -20,6 +20,10 @@ constexpr T imod(T i, T n) {
     return (n + (i % n)) % n;
 }
 
+inline double mod_euclid(double i, double n) {
+    return fmod(n + fmod(i, n), n);
+}
+
 constexpr double lerp(double a, double b, double t) {
     return a*(1.0-t) + b*t;
 }

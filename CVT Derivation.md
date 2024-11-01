@@ -119,27 +119,24 @@ Formula | Description
 ---|---:
 $F_f \le N_p \mu_b$ | No-slip condition
 $T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$ | Slack side tension, if belt can stretch
-$F_f = T_1 - T_0 = \tau_e/r_p + \tau_s/r_s$ | Relation between slack and taut tension under no-slip condition
-$F_f = T_1 - T_0 = \mu_b N_p$ | Relation between slack and taut tension under slipping condition
-$F_f = T_1 - T_0 = \min(\mu_b N_p, \tau_e/r_p + \tau_s/r_s)$ | Implicit conditional version
+$F1 = ?$ | unknown constant friction force, always opposing shifting
 **Primary Subsystem**
 $F_{sp} = k_p (d_{0p} + d_p)$ | Force from linear primary spring
 $F_{bp} = \frac{\alpha(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\alpha}{\tan(\phi)}(T_0 - 1)$ | Force from belt
 $F_{flyarm} = \frac{0.25 m_{fly}(r_{shoulder} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$ | Force from flyweights and ramp
-$F1 = ?$ | unknown constant friction force, always opposing shifting
-$F2*\omega_p^2 = ?$ | unknown friction force proportional to centripetal force, opposing shifting
 **Secondary Subsystem**
 $F_{ss} = k_s (d_{0s} + d_s)$ | Force from linear secondary spring
 $F_{bs} = \frac{\beta(F_{f,s})}{\tan(\phi)\ln(F_{f,s} + 1)} - \frac{\beta}{\tan(\phi)}(T_0 - 1)$ | Force from belt
 $\tau_{ss} = \kappa_s (\theta_{s0} + \theta_s)$ | Torque from torsional secondary spring
-$F3 = ?$ | unknown constant friction force, always opposing shifting
-**Belt Drive**
-$M_s = F_f*r_s - \tau_s - (F_1 \omega_p^2 + F_2 \omega_p + F_3)$ | Net moment applied to secondary
+$F_{helix} = \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})}$ | Force from helix, based on applied torque and torsional spring
 
-# Dynamics
+# Vehicle Dynamics
 Formula | Description
 ---|---:
-
+$\tau_{cvt} = F_f*r_s$ | Torque output by the CVT
+$\tau_g = N_g \tau_{cvt} $ | Torque output by the gearcase
+$F_{wheel} = \tau_g / r_{wheel}$ | Force output by the wheels on the ground
+$$
 
 # Derivation of $r_p, r_s$
 
@@ -302,6 +299,8 @@ $T_c = \rho_b A_b (r_s\omega_s)^2$ Secondary-based linear belt speed is used, be
 $T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$ 
 
 
+# Constant Belt Length Assumption
+
 However, after an initial implementation of the numeric solution to the CVT shift, it was determined that the belt stretching is the third degree of freedom in the system which introduces instability in the solver. The instabilty comes from the change in belt stretch being on a much smaller order of magnitude to the other values. So, in order to make the system's numerical solution with gradient descent more stable, the assumption that the belt doesn't stretch makes the solution more stable and faster to solve.
 
 No belt stretch assumption:
@@ -311,6 +310,8 @@ $L_{b0} = r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2}$
 Assuming that the belt doesn't stretch does not mean there is no static tension, it is just that the static tension is like a reaction force between the primary and secondary. Keeping in mind the derivation of F_b, the force on the sheave from the belt is correlated with T0 and F_f.
 
 If we constrain T1, T0, and by extension F_f, to be equal between the sheaves, then we get the following relation:
+
+$F_b = \frac{\alpha(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\alpha}{\tan(\phi)}(T_0 - 1)$
 
 $\frac{F_f}{\ln(F_f + 1)} - F_{bp} \frac{\tan(\phi)}{\alpha} - 1 = T_0$
 
@@ -322,23 +323,27 @@ $F_{bp} \frac{\tan(\phi)}{\alpha} = F_{bs} \frac{\tan(\phi)}{\beta}$
 
 $\frac{F_{bp}}{\alpha} = \frac{F_{bs}}{\beta}$
 
-$F_{bs} = F_{bp}\frac{\alpha}{\beta}$
+$F_{bs} = F_{bp}\frac{\beta}{\alpha}$
 
 Substituting this relation into the force balance equations for the primary and secondary:
 
 $0 = F_{sp} + F_{bp} - 4F_{flyarm}$
 
-$0 = F_{ss} - F_{bp}\frac{\alpha}{\beta} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})}$
+$0 = F_{ss} - F_{bp}\frac{\beta}{\alpha} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})}$
 
 Setting both equations equal to $F_{bp}$:
 
-$F_{bp} = 4F_{flyarm} - F_{sp} = \frac{\beta}{\alpha} (F_{ss} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})})$
+$F_{bp} = 4F_{flyarm} - F_{sp}$
 
-$0 = F_{sp} - 4F_{flyarm} + \frac{\beta}{\alpha} (F_{ss} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})})$
+$F_{bp} = \frac{\alpha}{\beta} (F_{ss} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})})$
+
+$4F_{flyarm} - F_{sp} = \frac{\alpha}{\beta} (F_{ss} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})})$
+
+$0 = F_{sp} - 4F_{flyarm} + \frac{\alpha}{\beta} (F_{ss} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})})$
+
+$0 = \beta (F_{sp} - 4F_{flyarm}) + \alpha (F_{ss} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})})$
 
 Now we have a force balance equation that relates the primary and the secondary that does not depend on belt tension.
-
-# Constant Belt Length Assumption
 
 If the belt is assumed to stay a constant length, then a different strategy is needed to check if the belt is slipping.
 
@@ -346,16 +351,15 @@ If we assume a constant belt length and a no-slip condition, then the force from
 
 $F_{bp} = 4F_{flyarm} - F_{sp} = (F_{ss} + F_{helix}) \frac{\alpha}{\beta}$
 
-$F_{bp} = \frac{\alpha(F_f)}{\tan(\phi)\ln(F_f + 1)} - \frac{\alpha}{\tan(\phi)}(T_0 - 1)$
-
 $N = \frac{F_b}{\cos(\phi)}$
-
-The no slip condition: $F_f \le \mu_b N$
-
-Or, represented as a value: $F_f = \tau_e/r_p + \tau_s/r_s$
 
 $N = \frac{4F_{flyarm} - F_{sp}}{\cos(\phi)}$
 
+The no slip condition: $F_f \le \mu_b N$
+
+No slip: $F_f = \tau_e/r_p + \tau_s/r_s$
+
+Slipping: $F_f = \mu_b N$
 
 # Derivation of $\theta_1, \theta_2, d_p$
 
@@ -459,73 +463,6 @@ $F_{flyarm} = \frac{(0.25 m_{fly}r_{fly}\omega_p^2) L_{arm} \cos(\theta_1) \cos(
 $F_{flyarm} = \frac{0.25 m_{fly}r_{fly}\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$
 
 $F_{flyarm} = \frac{0.25 m_{fly}(r_{shoulder} + L_{arm}\sin(\theta_1))\omega_p^2 L_{arm} \cos(\theta_1) \cos(\theta_2)}{L_{arm}\sin(\theta_1 + \theta_2) + r_{roller}\sin(2\theta_2)}$
-
-
-# Derivation of $d_p$
-
-$\sum{F_x} = 0 = F_{sp} + F_{bp} - N_fly F_{flyarm}$
-
-Expand values which depend on $d_p$:
-
-$0 = k_p (d_{0p} + d_p) + F_{bp} - N_fly F_{flyarm}$
-
-$k_p (d_{0p} + d_p) = 4F_{flyarm} - F_{bp}$
-
-$d_p = (N_fly F_{flyarm} - F_{bp})/k_p - d_{0p}$
-
-
-# Derivation of $d_s$
-
-The response to torque from the secondary is split between the two sheaves.
-The sum of taut side tensions from each sheave on the secondary sum to the taut side tension from the primary,
-and the same applies to the slack side tension.
-
-The torque applied to the secondary from the gearcase shaft is applied directly to the non-moving sheave,
-which is also applied to the rollers.
-The moving sheave is rigidly connected to the helix cam, so they can both be considered one rigid body.
-
-Unknown Variables: $T_{1s1}, T_{1s2}, T_{0s1}, T_{0s2}, d_s$
-
-Moments for the non-moving sheave:
-
-$\sum{M_z} = 0 = -\tau_s - \tau_{ss} + T_{1s1} r_s - T_{0s1} r_s + r_{helix} N_{helix} \sin(\theta_{helix})$
-
-Forces and Moments for the moving sheave:
-
-$\sum{M_z} = 0 = \tau_{ss} + T_{1s2} r_s - T_{0s2} r_s - r_{helix} N_{helix} \sin(\theta_{helix})$
-
-$\sum{F_x} = 0 = F_{ss} - F_{bs} + N_{helix} \cos(\theta_{helix})$
-
-Constraints on belt tension
-
-$T_1 = T_{1s1} + T_{1s2}$
-
-$T_0 = T_{0s1} + T_{0s2}$
-
-To avoid shearing the belt, we assume that the split tensions are equal:
-
-$T_{1s1} = T_{1s2} = T_1/2$
-
-$T_{0s1} = T_{0s2} = T_0/2$
-
-
-$\sum{M_z} = 0 = \tau_{ss} + \frac{T_1 - T_0}{2} r_s - r_{helix} N_{helix} \sin(\theta_{helix})$
-
-$\frac{F_f}{2} r_s = r_{helix}N_{helix}\sin(\theta_{helix}) - \tau_{ss}$
-
-$\sum{M_z} = 0 = -\tau_s - \tau_{ss} + \frac{F_f}{2} r_s + r_{helix} N_{helix} \sin(\theta_{helix})$
-
-$\sum{M_z} = 0 = -\tau_s - \tau_{ss} + r_{helix}N_{helix}\sin(\theta_{helix}) - \tau_{ss} + r_{helix} N_{helix} \sin(\theta_{helix})$
-
-$\sum{M_z} = 0 = -\tau_s - 2\tau_{ss} + 2r_{helix}N_{helix}\sin(\theta_{helix})$
-
-$N_{helix} = \frac{\tau_s + 2\tau_{ss}}{2r_{helix}\sin(\theta_{helix})}$
-
-$\sum{F_x} = 0 = F_{ss} - F_{bs} + \frac{\tau_s + 2\tau_{ss}}{2r_{helix}\tan(\theta_{helix})}$
-
-$\sum{F_x} = 0 = F_{ss} - F_{bs} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})}$
-
-$F_{bs} = F_{ss} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})}$
 
 
 # Derivation of Vehicle Dynamics

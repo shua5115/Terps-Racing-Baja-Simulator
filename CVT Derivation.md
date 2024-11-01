@@ -136,7 +136,6 @@ Formula | Description
 $\tau_{cvt} = F_f*r_s$ | Torque output by the CVT
 $\tau_g = N_g \tau_{cvt} $ | Torque output by the gearcase
 $F_{wheel} = \tau_g / r_{wheel}$ | Force output by the wheels on the ground
-$$
 
 # Derivation of $r_p, r_s$
 

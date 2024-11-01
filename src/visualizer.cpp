@@ -93,9 +93,10 @@ std::function<void()> DrawBarPlot3D(const Eigen::MatrixXd &x, const Eigen::Matri
             pos.x = scale.x * (float) remap(i, N-1, 0, 0, max_x-min_x);
             pos.y = 0.5f * cubesize.y; // /2 b/c box is centered, we want it top aligned
             pos.z = scale.z * (float) remap(j, 0, M-1, 0, max_z-min_z);
-            col.r = (char) remap(val, min_y, max_y, 0, 255);
-            col.g = (char) remap(val, min_y, max_y, 128, 128);
-            col.b = (char) remap(val, min_y, max_y, 255, 0);
+            col = ColorFromHSV(remap(val, min_y, max_y, 240, 0), 0.9, 1.0);
+            // col.r = (char) remap(val, min_y, max_y, 0, 255);
+            // col.g = (char) remap(val, min_y, max_y, 128, 128);
+            // col.b = (char) remap(val, min_y, max_y, 255, 0);
             pos = Vector3Add(pos, position);
             DrawPlane(Vector3Add(pos, {0, 0.5f*cubesize.y+0.01f, 0}), {cubesize.x, cubesize.z}, col);
             col.r *= 0.75;
@@ -104,7 +105,8 @@ std::function<void()> DrawBarPlot3D(const Eigen::MatrixXd &x, const Eigen::Matri
             DrawCube(pos, cubesize.x, cubesize.y, cubesize.z, col);
         }
     }
-
+    
+    Vector2 center = GetWorldToScreen(Vector3Add(position, Vector3Scale(size, 0.5f)), cam);
     label_data[0] = std::tuple<Vector2, Vector2, double>(GetWorldToScreen(x_axis_start, cam), {MeasureTextEx(font, "_", fontsize, font_spacing).x, 0}, min_x);
     label_data[1] = std::tuple<Vector2, Vector2, double>(GetWorldToScreen(x_axis_end, cam), {MeasureTextEx(font, "_", fontsize, font_spacing).x, 0}, max_x);
     label_data[2] = std::tuple<Vector2, Vector2, double>(GetWorldToScreen(y_axis_start, cam), Vector2Multiply(MeasureTextEx(font, TextFormat("_%.2f", min_y), fontsize, font_spacing), {-0.5, -1}), min_y);
@@ -112,7 +114,7 @@ std::function<void()> DrawBarPlot3D(const Eigen::MatrixXd &x, const Eigen::Matri
     label_data[4] = std::tuple<Vector2, Vector2, double>(GetWorldToScreen(z_axis_start, cam), {-MeasureTextEx(font, TextFormat("_%.2f", min_z), fontsize, font_spacing).x, 0}, min_z);
     label_data[5] = std::tuple<Vector2, Vector2, double>(GetWorldToScreen(z_axis_end, cam), {-MeasureTextEx(font, TextFormat("_%.2f", max_z), fontsize, font_spacing).x, 0}, max_z);
 
-    auto callback = [label_data, font, fontsize, font_spacing, xlabel, ylabel, flabel](){
+    auto callback = [center, label_data, font, fontsize, font_spacing, xlabel, ylabel, flabel](){
         const char *labels[] = {xlabel, flabel, ylabel};
         for(size_t i = 0; i < label_data.size(); i++) {
             auto [p1, off1, val1] = label_data[(i/2)*2];
@@ -120,7 +122,13 @@ std::function<void()> DrawBarPlot3D(const Eigen::MatrixXd &x, const Eigen::Matri
             if (Vector2Equals(p1, p2)) continue;
             if (i%2 == 0) {
                 const char *label = labels[i/2];
-                DrawTextEx(font, label, Vector2Add(Vector2Lerp(p1, p2, 0.5f), Vector2Lerp(off1, off2, 0.5)), fontsize, font_spacing, BLACK);
+                Vector2 textsize = MeasureTextEx(font, label, fontsize, font_spacing);
+                Vector2 labelpos = Vector2Lerp(p1, p2, 0.5f);
+                labelpos = Vector2Subtract(labelpos, center);
+                labelpos = Vector2Add(labelpos, Vector2Scale(Vector2Normalize(labelpos), 0.5f*Vector2Length(textsize)));
+                labelpos = Vector2Add(labelpos, center);
+                labelpos = Vector2Add(labelpos, Vector2Scale(textsize, -0.5f));
+                DrawTextEx(font, label, labelpos, fontsize, font_spacing, BLACK);
             }
 
             const auto [src, off, val] = label_data.at(i);
@@ -153,7 +161,7 @@ int main() {
     SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
 
     InitWindow(720, 720, "CVT Ratio vs. omega_p, tau_s");
-
+    
     while(!WindowShouldClose()) {
         float dt = GetFrameTime();
         BeginDrawing();
@@ -187,7 +195,7 @@ int main() {
         cam.up.z = -sinf(yaw_adj)*sinf(pitch_adj);
         BeginMode3D(cam);
         
-        auto draw_axes = DrawBarPlot3D(data.omega_p, data.tau_s, data.ratio, {0, 0, 0}, {10, 4, 10}, cam);
+        auto draw_axes = DrawBarPlot3D(data.omega_p, data.tau_s, data.ratio, {0, 0, 0}, {10, 4, 10}, cam, "w_p", "tau_s", "ratio", 40);
 
         EndMode3D();
         

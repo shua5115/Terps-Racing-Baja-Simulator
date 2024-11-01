@@ -17,10 +17,11 @@ const BajaState TR24_GAGED_GX9 = {
             // the ramp must never have a derivative of zero
             x *= 1000; // convert from m to mm
             // if (x < 0) return 17.5;
-            if (x < 5) return remap(x, 0, 5, 17.5, 16.475);
-            if (x < 30.) return (0.01*x*x-0.805*x+20.25); // intersects (5, 16.475) and (30.5, 5)
-            if (x < 31) return remap(x, 30.5, 31, 5, 0);
-            return remap(x, 31, 32, 0, -1);
+            if (x < 5) return 0.001*remap(x, 0, 5, 17.5, 16.475);
+            // if (x < 30.) return 0.001*(0.01*x*x-0.805*x+20.25); // intersects (5, 16.475) and (30.5, 5)
+            // if (x < 31) return 0.001*remap(x, 30.5, 31, 5, 0);
+            // return 0.001*remap(x, 31, 32, 0, -1);
+            return 0.001*(0.01*x*x-0.805*x+20.25);
         },
         .k_p = 60*LBF2N/IN2M,
         .m_fly = 0.536,
@@ -76,7 +77,7 @@ const BajaState TR24_GAGED_GX9 = {
     .d_p = 0.00,
     .d_r = 0,
     .theta1 = 0, // this is wrong, but the solver will correct this
-    .theta2 = PI*0.5, // this is wrong, but the solver will correct this
+    .theta2 = PI*0.4, // this is wrong, but the solver will correct this
     .r_s = IN2M*3.3125,
     .d_s = 0.00,
 };
@@ -90,34 +91,33 @@ void BajaState::set_ratio_from_d_p(double d) {
     d_s = d_s_max - (r_s - r_s_min())*tan_phi;
 }
 
-OptResults<3> solve_flyweight_position(
-    double theta1_guess, double theta2_guess, double d_r_guess,
+OptResults<2> solve_flyweight_position(
+    double theta1_guess, double theta2_guess,
     double (*ramp)(double x),
     double L1, double L2,
     double d_p, double x_ramp,
     double r_cage, double r_shoulder
 ) {
-    Eigen::Vector3d x0(theta1_guess, theta2_guess, d_r_guess);
-    Eigen::Vector3d x_lb(-PI*0.5, -PI*0.5, 0);
-    Eigen::Vector3d x_ub(PI*0.5, PI*0.5, INFINITY);
+    Eigen::Vector2d x0(theta1_guess, theta2_guess);
+    Eigen::Vector2d x_lb(-PI*0.5, 0);
+    Eigen::Vector2d x_ub(PI*0.5, PI);
 
-    ScalarFn<3> objective = [=](Eigen::Vector3d x){
+    ScalarFn<2> objective = [=](Eigen::Vector2d x){
         double theta1 = clamp(x(0), x_lb(0), x_ub(0));
         double theta2 = clamp(x(1), x_lb(1), x_ub(1));
-        double d_r = clamp(x(2), x_lb(2), x_ub(2));
-
+        
+        double d_r = x_ramp + d_p - L1*cos(theta1);
         double ramp_eval = d_r - L2*cos(theta2);
 
-        double eq1 = L1*cos(theta1) - x_ramp - d_p + d_r;
-        double eq2 = L1*sin(theta1) + L2*sin(theta2) - r_cage + r_shoulder + ramp(ramp_eval);
-        double eq3 = atan(diff_central(ramp, ramp_eval, 1e-6)) + PI*0.5 - theta2;
+        double eq1 = L1*sin(theta1) + L2*sin(theta2) - r_cage + r_shoulder + ramp(ramp_eval);
+        double eq2 = atan(diff_central(ramp, ramp_eval, 1e-6)) + PI*0.5 - theta2;
 
-        return 0.1*eq1*eq1 + 0.1*eq2*eq2 + 100*eq3*eq3;
+        return eq1*eq1 + eq2*eq2;
     };
 
     return minimize_gradient_golden(
         objective, x0, x_lb, x_ub,
-        1e-6, 1e-6, 0.1, 1000
+        1e-8, 1e-6, 0.05, 500
     );
 }
 
@@ -132,7 +132,7 @@ double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0
     return root_secant(belt_err, r_s_min, r_s_max, N);
 }
 
-double solve_cvt_shift(const BajaState &baja, bool debug) {
+Eigen::Vector3d solve_cvt_shift(const BajaState &baja, bool debug) {
     // Precalculate derived constants
     double tau_e = matrix_linear_lookup(baja.engine_torque_curve, std::max(RADPS2RPM*baja.omega_p, baja.rpm_idle));
     tau_e = baja.throttle_scale(tau_e, baja.controls.throttle);
@@ -166,10 +166,14 @@ double solve_cvt_shift(const BajaState &baja, bool debug) {
 
         double d_s = d_s_max - (r_s - r_s_min)*tan_phi;
 
+        auto S = solve_flyweight_position(theta1, theta2, baja.cvt_tune.p_ramp_fn, baja.L_arm, baja.r_roller, d_p, baja.x_ramp, baja.r_cage, baja.r_shoulder);
+        theta1 = S.x(0);
+        theta2 = S.x(1);
+
         double r_fly = baja.r_shoulder + baja.L_arm*sin(theta1);
         // CVT system values
         double alpha = 2*acos(clamp((r_s-r_p)/baja.L, -1, 1));
-        double beta = 2*PI-alpha; //2*acos(clamp((r_p-r_s)/baja.L, -1, 1));
+        double beta = 2*PI-alpha;
         
         double theta_s = d_s/(baja.r_helix*tan_helix);
 
@@ -184,11 +188,8 @@ double solve_cvt_shift(const BajaState &baja, bool debug) {
         double F_ss = baja.cvt_tune.k_s*(baja.d_s_0 + d_s);
         double tau_ss = baja.cvt_tune.kappa_s*(baja.cvt_tune.theta_s_0 + theta_s);
         double F_helix = (baja.tau_s*0.5 + tau_ss)/(baja.r_helix*tan_helix);
-        //N = ((N-m/rad * rad) + N-m) * 1/m
         
-        // double eq1 = (F_ss + F_helix)*beta/alpha - F_flyarm + F_sp; // Sum of forces between primary and secondary
-        // F_{sp} - 4F_{flyarm} + \frac{\beta}{\alpha} (F_{ss} + \frac{\tau_s/2 + \tau_{ss}}{r_{helix}\tan(\theta_{helix})})
-        double eq1 = beta*(F_sp - F_flyarm) + alpha*(F_ss + F_helix);
+        double eq1 = (F_sp - F_flyarm) + (alpha/beta)*(F_ss + F_helix);
 
         // F1 always resists shifting, bringing forces closer to equilibrium, or reaching equilibrium if close enough
         if (eq1 > F1) {
@@ -199,17 +200,18 @@ double solve_cvt_shift(const BajaState &baja, bool debug) {
             eq1 = 0;
         }
 
-        if (debug){
-            printf("d_p=%f, d_s=%f, ratio=%f, f=%f\t wrap=%f, F_sp=%f, F_fly=%f, F_ss=%f, F_helix=%f\n",
-                d_p, d_s, r_s/r_p, eq1, beta/alpha, F_sp, F_flyarm, F_ss, F_helix);
-        }
+        // if (debug){
+        //     printf("d_p=%f, d_s=%f, ratio=%f, f=%f\t wrap=%f, F_sp=%f, F_fly=%f, F_ss=%f, F_helix=%f\n",
+        //         d_p, d_s, r_s/r_p, eq1, beta/alpha, F_sp, F_flyarm, F_ss, F_helix);
+        // }
 
         return eq1;
     };
 
     // Sample range of objective function looking for a sign change
     //printf("Searching for sign change:\n");
-    int N = 3;
+    
+    int N = 256;
     double eq_prev = objective(0);
     double d_p_prev = d_p_max;
     double d_p_cur = 0;
@@ -217,12 +219,14 @@ double solve_cvt_shift(const BajaState &baja, bool debug) {
     double min_eq = eq_prev;
     bool sign_change = false;
     for(int i = 0; i < N; i++) {
-        d_p_cur = remap(i, 0, N-1, 0, d_p_max);
-        double eq = objective(d_p_cur);
-        if (abs(eq) < abs(min_eq)) {
+        double d_p = remap(i, 0, N-1, 0, d_p_max);
+        double eq = objective(d_p);
+        if (abs(eq) <= abs(min_eq)) {
             min_eq = eq;
-            min_d_p = d_p_cur;
+            min_d_p = d_p;
+            if (min_eq == 0) break;
         }
+        d_p_cur = d_p;
         if (sign(eq) != sign(eq_prev)) {
             sign_change = true;
             break;
@@ -230,15 +234,15 @@ double solve_cvt_shift(const BajaState &baja, bool debug) {
         eq_prev = eq;
         d_p_prev = d_p_cur;
     }
-    // printf("Sign change %s\n", sign_change ? "found!" : "not found...");
+    // // printf("Sign change %s\n", sign_change ? "found!" : "not found...");
     double S;
     if (sign_change) {
-        S = root_bisection(objective, d_p_prev, d_p_cur, 30);
+        S = root_bisection(objective, d_p_prev, d_p_cur, 10);
         // printf("Bisection result: d_p=%f, f=%f\n", S, objective(S));
     } else {
         S = min_d_p;
         // S = root_newton(objective, min_d_p, 1e-6, 30);
-        // S = root_secant(objective, min_d_p, d_p_max, 30);
+        // S = root_secant(objective, d_p_max*0.5, min_d_p, 15);
         // printf("Secant result: d_p=%f, f=%f\n", S, objective(S));;
     }
 
@@ -254,7 +258,11 @@ double solve_cvt_shift(const BajaState &baja, bool debug) {
         double F_ss = baja.cvt_tune.k_s*(baja.d_s_0 + d_s);
         double tau_ss = baja.cvt_tune.kappa_s*(baja.cvt_tune.theta_s_0 + d_s/(baja.r_helix*tan_helix));
         double F_helix = (baja.tau_s*0.5 + tau_ss)/(baja.r_helix*tan_helix);
-        printf("%f, %f, %f, %f, %f, %f, %f, %f, %f\n", baja.omega_p, baja.tau_s, d_p, d_s, r_s/r_p, F_sp, F_flyarm, F_ss, F_helix);
+        double alpha = 2*acos(clamp((r_s-r_p)/baja.L, -1, 1));
+        double beta = 2*PI-alpha;
+        double eq1 = beta*(F_sp - F_flyarm) + alpha*(F_ss + F_helix);
+        printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", baja.omega_p, baja.tau_s, d_p, d_s, r_s/r_p, F_sp, F_flyarm, F_ss, F_helix, eq1);
     }
-    return S;
+    return Eigen::Vector3d(S, theta1, theta2);
 }
+

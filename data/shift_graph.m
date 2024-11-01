@@ -1,3 +1,3 @@
-data = readtable("shift_wrap_inv_dist.csv")
+data = readtable("shift_wrap_new.csv");
 
 scatter3(data, "omega_p", "tau_s", "ratio")

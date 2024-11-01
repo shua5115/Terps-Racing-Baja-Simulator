@@ -360,6 +360,67 @@ No slip: $F_f = \tau_e/r_p + \tau_s/r_s$
 
 Slipping: $F_f = \mu_b N$
 
+
+# Derivation of $F_{bs}$
+
+Moments on nonmoving sheave: $0 = -\tau_s - \tau_{ss} + T_{1s1}r_s - T_{0s1}r_s + r_{helix} N_{helix} \sin(\theta_{helix})$
+
+Moments on moving sheave: $0 = \tau_{ss} + T_{1s2} r_s - T_{0s2} r_s - r_{helix} N_{helix} \sin(\theta_{helix})$
+
+Axial Forces on moving sheave: $0 = F_{ss} - F_{bs} + N_{helix} \cos(\theta_{helix})$
+
+Tensions must sum to their respective totals:
+ 
+$T_1 == T_{1s1} + T_{1s2}$
+
+$T_0 == T_{0s1} + T_{0s2}$
+
+Relation between primary friction force and tension: $F_f = T_1 - T_0$
+
+If we solve the two moment equations:
+
+$0 = -\tau_s - \tau_{ss} + (T_{1s1} - T_{0s1}) r_s + r_{helix} N_{helix} \sin(\theta_{helix})$
+
+$\tau_{ss} = -tau_s + (T_{1s1} - T_{0s1}) r_s + r_{helix} N_{helix} \sin(\theta_{helix})$
+
+$0 = \tau_{ss} + (T_{1s2} - T_{0s2}) r_s - r_{helix} N_{helix} \sin(\theta_{helix})$
+
+$0 = -\tau_s + (T_{1s1} - T_{0s1}) r_s + r_{helix} N_{helix} \sin(\theta_{helix}) + (T_{1s2} - T_{0s2}) r_s - r_{helix} N_{helix} \sin(\theta_{helix})$
+
+$0 = -\tau_s + (T_{1s1} - T_{0s1}) r_s + (T_{1s2} - T_{0s2}) r_s$
+
+$0 = -\tau_s + r_s (T_{1s1} - T_{0s1} + T_{1s2} - T_{0s2})$
+
+$0 = -\tau_s + r_s (T_{1s1} - T_{0s1} + T_{1s2} - T_{0s2})$
+
+$0 = -\tau_s + r_s (F_f)$
+
+This is true, but doesn't tell us anything new.
+
+If we instead subtract the two moment equations from each other:
+
+$0 = \tau_{ss} + T_{1s2} r_s - T_{0s2} r_s - r_{helix} N_{helix} \sin(\theta_{helix}) + \tau_s + \tau_{ss} - T_{1s1}r_s + T_{0s1}r_s - r_{helix} N_{helix} \sin(\theta_{helix})$
+
+$0 = 2 \tau_{ss} + r_s (T_{1s2} - T_{0s2} - T_{1s1} + T_{0s1}) - 2 r_{helix} N_{helix} \sin(\theta_{helix}) + \tau_s$
+
+Solving for $N_{helix}$:
+
+$2 r_{helix} N_{helix} \sin(\theta_{helix}) = 2 \tau_{ss} + r_s (T_{1s2} - T_{0s2} - T_{1s1} + T_{0s1}) + \tau_s$
+
+$r_{helix} N_{helix} \sin(\theta_{helix}) = \tau_{ss} + 0.5 r_s (T_{1s2} - T_{0s2} - T_{1s1} + T_{0s1}) + 0.5 \tau_s$
+
+$N_{helix} = \frac{\tau_{ss} + 0.5 r_s (T_{1s2} - T_{0s2} - T_{1s1} + T_{0s1}) + 0.5 \tau_s}{r_{helix} \sin(\theta_{helix})}$
+
+If we assume that either sheave's tensions are equal, then the tension term disappears.
+This is justified by the assumption that the belt does not deform.
+If the tensions on either side of the belt are different, it will cause the belt to skew its shape.
+The only way for this to not occur is to have each sheave apply equal friction force (applied tension).
+
+$N_{helix} = \frac{\tau_{ss} + 0.5 \tau_s}{r_{helix} \sin(\theta_{helix})}$
+
+$F_{bs} = F_{ss} + \frac{\tau_{ss} + 0.5 \tau_s}{r_{helix} \tan(\theta_{helix})}$
+
+
 # Derivation of $\theta_1, \theta_2, d_p$
 
 The reaction force from the flyweight arm must be determined using kinematics. The system acts like a 2-bar linkage where the first link extends from the point "R" to the roller with length $L$ and angle $\theta_R$. The second link extends from the roller to the edge of the ramp with length $r_{roller}$ and angle $\theta_N$

@@ -124,8 +124,8 @@ struct BajaState {
 
 constexpr size_t BAJASTATE_SIZE_CHECK = sizeof(BajaState);
 
-OptResults<3> solve_flyweight_position(
-    double theta1_guess, double theta2_guess, double d_r_guess,
+OptResults<2> solve_flyweight_position(
+    double theta1_guess, double theta2_guess,
     double (*ramp)(double x),
     double L1, double L2,
     double d_p, double x_ramp,
@@ -136,7 +136,8 @@ OptResults<3> solve_flyweight_position(
 // Per testing, numerical error is less than floating point error after N=8 for this function for all reasonable values of r_p.
 double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0, unsigned int N);
 
-double solve_cvt_shift(const BajaState &baja_state, bool debug = false);
+// Returns a vector containing d_p, theta1, theta2
+Eigen::Vector3d solve_cvt_shift(const BajaState &baja_state, bool debug = false);
 
 // Calculates the current CVT shift ratio, along with other variables
 OptResults<6> solve_cvt_shift_unstable(const BajaState &baja_state);

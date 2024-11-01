@@ -77,24 +77,27 @@ double diff_central(F f, double x, double step) {
 }
 
 template<typename F>
-double root_bisection(F f, double x_lo, double x_hi, size_t N) {
-    double x_mid, y_lo, y_hi;
-    y_lo = f(x_lo);
-    y_hi = f(x_hi);
+double root_bisection(F f, double x_left, double x_right, size_t N) {
+    double x_mid, y_left, y_right;
+    y_left = f(x_left);
+    y_right = f(x_right);
+    if (y_left == 0) return x_left;
+    if (y_right == 0) return x_right;
     for (size_t i = 0; i < N; i++) {
-        x_mid = 0.5*(x_lo + x_hi);
+        x_mid = 0.5*(x_left + x_right);
         double y_mid = f(x_mid);
-        double sign_left = sign(y_lo)*sign(y_mid);
-        double sign_right = sign(y_hi)*sign(y_mid);
+        if (y_mid == 0) return x_mid;
+        double sign_left = sign(y_left)*sign(y_mid);
+        double sign_right = sign(y_right)*sign(y_mid);
         if (sign_left < 0.0) {
-            x_hi = x_mid;
+            x_right = x_mid;
         } else if (sign_right < 0.0) {
-            x_lo = x_mid;
-        } else if (sign_left != 0 && sign_right != 0){
+            x_left = x_mid;
+        } else {
             return x_mid;
-        } else break;
+        }
     }
-    x_mid = 0.5*(x_lo + x_hi);
+    x_mid = 0.5*(x_left + x_right);
     return x_mid;
 }
 

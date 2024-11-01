@@ -4,24 +4,15 @@
 #include "raylib.h"
 #include "raymath.h"
 
-double cvt_ratio(double omega_p, double tau_s) {
-    BajaState state = TR24_GAGED_GX9;
+void cvt_ratio(BajaState &state) {
     state.controls.throttle = 1;
-    state.d_p = state.d_p_max/2; // set so flyweight solver is in medium section
-
-    auto S_fly = solve_flyweight_position(state.theta1, state.theta2,
-        state.d_r, state.cvt_tune.p_ramp_fn, state.L_arm, state.r_roller,
-        state.d_p, state.x_ramp, state.r_cage, state.r_shoulder
-    );
-    state.theta1 = S_fly.x(0);
-    state.theta2 = S_fly.x(1);
-    state.d_r = S_fly.x(2);
+    // state.d_p = state.d_p_max/2;
+    // auto S_fly = solve_flyweight_position(state.theta1, state.theta2, state.cvt_tune.p_ramp_fn, state.L_arm, state.r_roller,
+    //     state.d_p, state.x_ramp, state.r_cage, state.r_shoulder
+    // );
+    // state.theta1 = S_fly.x(0);
+    // state.theta2 = S_fly.x(1);
     
-    state.omega_p = omega_p;
-    state.tau_s = tau_s;
-    double d_p = solve_cvt_shift(state);
-    state.set_ratio_from_d_p(d_p);
-    return state.r_s/state.r_p;
 }
 
 struct ShiftRatioData {
@@ -29,22 +20,46 @@ struct ShiftRatioData {
     ShiftRatioData() : omega_p(), tau_s(), ratio() {}
 };
 
-ShiftRatioData gen_data(unsigned int N) {
+std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
     std::vector<std::thread> threads;
     threads.reserve(N);
-    ShiftRatioData data;
-    data.omega_p.resize(N, N);
-    data.tau_s.resize(N, N);
-    data.ratio.resize(N, N);
+    std::vector<Eigen::MatrixXd> data;
+    data.resize(8, Eigen::MatrixXd());
+    for(auto &d : data) {
+        d.resize(N, N);
+    }
     for(unsigned int i = 0; i < N; i++) {
         threads.emplace_back([&data, N, i](){
             for(unsigned int j = 0; j < N; j++) {
-                double omega_p = remap(i, 0, N-1, 1800, 3800)*RPM2RADPS;
-                double tau_s = remap(j, 0, N-1, 0, 4*18.5*LBF2N/FT2M);
-                double ratio = cvt_ratio(omega_p, tau_s);
-                data.omega_p(i, j) = omega_p;
-                data.tau_s(i, j) = tau_s;
-                data.ratio(i, j) = ratio;
+                BajaState baja = TR24_GAGED_GX9;
+                baja.controls.throttle = 1;
+                baja.omega_p = remap(i, 0, N-1, 1800, 3800)*RPM2RADPS;
+                baja.tau_s = remap(j, 0, N-1, 0*18.5*LBF2N/FT2M, 2*18.5*LBF2N/FT2M);
+                Eigen::Vector3d v = solve_cvt_shift(baja);
+                baja.set_ratio_from_d_p(v(0));
+                baja.theta1 = v(1);
+                baja.theta2 = v(2);
+                double ratio = baja.r_s/baja.r_p;
+                double tan_helix = tan(baja.cvt_tune.theta_helix);
+                double F_sp = baja.cvt_tune.k_p*(baja.d_p_0 + baja.d_p);
+                double F_flyarm = (baja.cvt_tune.m_fly*(baja.r_shoulder + baja.L_arm*sin(baja.theta1))*baja.omega_p*baja.omega_p*baja.L_arm*cos(baja.theta1)*cos(baja.theta2))
+                    /(baja.L_arm*sin(baja.theta1 + baja.theta2) + baja.r_roller*sin(2*baja.theta2));
+                double F_ss = baja.cvt_tune.k_s*(baja.d_s_0 + baja.d_s);
+                double tau_ss = baja.cvt_tune.kappa_s*(baja.cvt_tune.theta_s_0 + baja.d_s/(baja.r_helix*tan_helix));
+                double F_helix = (baja.tau_s*0.5 + tau_ss)/(baja.r_helix*tan_helix);
+                double alpha = 2*acos(clamp((baja.r_s-baja.r_p)/baja.L, -1, 1));
+                double beta = 2*PI-alpha;
+                double F_p = (F_flyarm - F_sp);
+                double F_s = (F_ss + F_helix);
+                // double eq1 = -F_p + (alpha/beta)*F_s;
+                data[0](i, j) = baja.omega_p;
+                data[1](i, j) = baja.tau_s;
+                data[2](i, j) = baja.d_p;
+                data[3](i, j) = baja.d_s;
+                data[4](i, j) = ratio;
+                data[5](i, j) = F_p;
+                data[6](i, j) = F_s;
+                data[7](i, j) = F_p - (alpha/beta)*F_s;
             }
         });
     }
@@ -64,6 +79,7 @@ std::function<void()> DrawBarPlot3D(const Eigen::MatrixXd &x, const Eigen::Matri
     auto [min_y, max_y] = minmax(f);
     auto [min_z, max_z] = minmax(y);
     float step_x = (max_x-min_x)/N;
+    float step_y = 2*(max_y-min_y)/(N+M);
     float step_z = (max_z-min_z)/M;
     Vector3 scale = {
         (float) (size.x/(max_x-min_x)),
@@ -87,21 +103,20 @@ std::function<void()> DrawBarPlot3D(const Eigen::MatrixXd &x, const Eigen::Matri
             Vector3 pos, cubesize;
             Color col = WHITE;
             double val = f(i, j);
-            cubesize.x = step_x*scale.x*1.01;
-            cubesize.y = (float) remap(val, min_y, max_y, 0, size.y);
-            cubesize.z = step_z*scale.z*1.01;
-            pos.x = scale.x * (float) remap(i, N-1, 0, 0, max_x-min_x);
-            pos.y = 0.5f * cubesize.y; // /2 b/c box is centered, we want it top aligned
-            pos.z = scale.z * (float) remap(j, 0, M-1, 0, max_z-min_z);
-            col = ColorFromHSV(remap(val, min_y, max_y, 240, 0), 0.9, 1.0);
-            // col.r = (char) remap(val, min_y, max_y, 0, 255);
-            // col.g = (char) remap(val, min_y, max_y, 128, 128);
-            // col.b = (char) remap(val, min_y, max_y, 255, 0);
+            cubesize = {(float)step_x*scale.x*1.01f, 0, (float)step_z*scale.z*1.01f};;
+            cubesize.y = Lerp(cubesize.x, cubesize.z, 0.5f);
+            //cubesize.x = step_x*scale.x*1.01;
+            //cubesize.y = (float) remap(val, min_y, max_y, 0, size.y);
+            //cubesize.z = step_z*scale.z*1.01;
+            pos.x = (float) remap(x(i, j), min_x, max_x, size.x, 0); //scale.x * (float) remap(i, N-1, 0, 0, max_x-min_x);
+            pos.y = (float) remap(val, min_y, max_y, 0, size.y); // 0.5f * cubesize.y; // /2 b/c box is centered, we want it top aligned
+            pos.z = (float) remap(y(i, j), min_z, max_z, 0, size.z); // scale.z * (float) remap(j, 0, M-1, 0, max_z-min_z);
+            col = ColorFromHSV(remap(val, min_y, max_y, 240, 0), 0.9, (abs(val) < 2*step_y) ? 0.0 : 1.0);
             pos = Vector3Add(pos, position);
-            DrawPlane(Vector3Add(pos, {0, 0.5f*cubesize.y+0.01f, 0}), {cubesize.x, cubesize.z}, col);
-            col.r *= 0.75;
-            col.g *= 0.75;
-            col.b *= 0.75;
+            // DrawPlane(Vector3Add(pos, {0, 0.5f*cubesize.y+0.01f, 0}), {cubesize.x, cubesize.z}, col);
+            // col.r *= 0.75;
+            // col.g *= 0.75;
+            // col.b *= 0.75;
             DrawCube(pos, cubesize.x, cubesize.y, cubesize.z, col);
         }
     }
@@ -156,7 +171,9 @@ int main() {
     };
     float pitch = PI*0.125, yaw = -PI*0.25, orbit_dist = 25;
 
-    auto data = gen_data(128);
+    auto data = gen_data(150);
+
+    int graph = 0;
 
     SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
 
@@ -193,10 +210,41 @@ int main() {
         cam.up.x = -cosf(yaw_adj)*sinf(pitch_adj);
         cam.up.y = cosf(pitch_adj);
         cam.up.z = -sinf(yaw_adj)*sinf(pitch_adj);
+
+        for(int key = KEY_ONE; key <= KEY_NINE; key++) {
+            if (IsKeyPressed(key)) graph = key - KEY_ONE;
+        }
+
         BeginMode3D(cam);
         
-        auto draw_axes = DrawBarPlot3D(data.omega_p, data.tau_s, data.ratio, {0, 0, 0}, {10, 4, 10}, cam, "w_p", "tau_s", "ratio", 40);
+        std::function<void()> draw_axes = [](){};
 
+        switch(graph) {
+            case 0:
+                draw_axes = DrawBarPlot3D(data[0], data[1], data[4], {0, 0, 0}, {10, 4, 10}, cam, "w_p", "tau_s", "ratio", 40);
+                break;
+            case 1:
+                draw_axes = DrawBarPlot3D(data[0], data[1], data[5], {0, 0, 0}, {10, 4, 10}, cam, "w_p", "tau_s", "F_p", 40);
+                break;
+            case 2:
+                draw_axes = DrawBarPlot3D(data[0], data[1], data[6], {0, 0, 0}, {10, 4, 10}, cam, "w_p", "tau_s", "F_s", 40);
+                break;
+            case 3:
+                draw_axes = DrawBarPlot3D(data[2], data[0], data[5], {0, 0, 0}, {10, 4, 10}, cam, "d_p", "w_p", "F_p", 40);
+                break;
+            case 4:
+                draw_axes = DrawBarPlot3D(data[3], data[1], data[6], {0, 0, 0}, {10, 4, 10}, cam, "d_s", "tau_s", "F_s", 40);
+                break;
+            case 5:
+                draw_axes = DrawBarPlot3D(data[0], data[1], data[7], {0, 0, 0}, {10, 4, 10}, cam, "w_p", "tau_s", "F_p-F_s", 40);
+                break;
+            case 6:
+                draw_axes = DrawBarPlot3D(data[0], data[1], data[2], {0, 0, 0}, {10, 4, 10}, cam, "w_p", "tau_s", "d_p", 40);
+                break;
+            case 7:
+                draw_axes = DrawBarPlot3D(data[0], data[1], data[3], {0, 0, 0}, {10, 4, 10}, cam, "w_p", "tau_s", "d_s", 40);
+                break;
+        }
         EndMode3D();
         
         draw_axes();

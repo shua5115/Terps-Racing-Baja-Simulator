@@ -81,7 +81,7 @@ struct BajaState {
     // Primary
     double r_p;         // m, radius of belt on primary sheave
     double d_p;         // m, linear displacement of primary sheave during shift
-    double d_r;         // m, linear displacement of roller from outermost edge of ramp
+    // double d_r;         // m, linear displacement of roller from outermost edge of ramp
     double theta1;      // rad, angle beween flyweight arm and primary axis
     double theta2;      // rad, angle between primary ramp surface normal and primary axis
     // Secondary
@@ -137,7 +137,7 @@ OptResults<2> solve_flyweight_position(
 double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0, unsigned int N);
 
 // Returns a vector containing d_p, theta1, theta2
-Eigen::Vector3d solve_cvt_shift(const BajaState &baja_state, bool debug = false);
+Eigen::Vector3d solve_cvt_shift(const BajaState &baja_state, int debug = 0);
 
 // Calculates the current CVT shift ratio, along with other variables
 OptResults<6> solve_cvt_shift_unstable(const BajaState &baja_state);

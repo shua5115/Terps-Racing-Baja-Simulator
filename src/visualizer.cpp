@@ -32,9 +32,15 @@ std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
         threads.emplace_back([&data, N, i](){
             for(unsigned int j = 0; j < N; j++) {
                 BajaState baja = TR24_GAGED_GX9;
+                baja.d_p = baja.d_p_max/2;
+                auto S_fly = solve_flyweight_position(baja.theta1, baja.theta2, baja.cvt_tune.p_ramp_fn, baja.L_arm, baja.r_roller,
+                    baja.d_p, baja.x_ramp, baja.r_cage, baja.r_shoulder
+                );
+                baja.theta1 = S_fly.x(0);
+                baja.theta2 = S_fly.x(1);
                 baja.controls.throttle = 1;
                 baja.omega_p = remap(i, 0, N-1, 1800, 3800)*RPM2RADPS;
-                baja.tau_s = remap(j, 0, N-1, 0*18.5*LBF2N/FT2M, 2*18.5*LBF2N/FT2M);
+                baja.tau_s = remap(j, 0, N-1, 0*18.5*LBF2N/FT2M, 1*18.5*LBF2N/FT2M);
                 Eigen::Vector3d v = solve_cvt_shift(baja);
                 baja.set_ratio_from_d_p(v(0));
                 baja.theta1 = v(1);
@@ -51,7 +57,7 @@ std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
                 double beta = 2*PI-alpha;
                 double F_p = (F_flyarm - F_sp);
                 double F_s = (F_ss + F_helix);
-                // double eq1 = -F_p + (alpha/beta)*F_s;
+                double eq1 = -F_p + (alpha/beta)*F_s;
                 data[0](i, j) = baja.omega_p;
                 data[1](i, j) = baja.tau_s;
                 data[2](i, j) = baja.d_p;
@@ -60,6 +66,7 @@ std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
                 data[5](i, j) = F_p;
                 data[6](i, j) = F_s;
                 data[7](i, j) = F_p - (alpha/beta)*F_s;
+                // printf("%f, %f, %f, %f, %f, %f, %f, %f\n", baja.omega_p, baja.tau_s, v(0), v(1), v(2), F_p, F_s, eq1);
             }
         });
     }
@@ -103,7 +110,7 @@ std::function<void()> DrawBarPlot3D(const Eigen::MatrixXd &x, const Eigen::Matri
             Vector3 pos, cubesize;
             Color col = WHITE;
             double val = f(i, j);
-            cubesize = {(float)step_x*scale.x*1.01f, 0, (float)step_z*scale.z*1.01f};;
+            cubesize = {(float)step_x*scale.x*1.05f, 0, (float)step_z*scale.z*1.05f};;
             cubesize.y = Lerp(cubesize.x, cubesize.z, 0.5f);
             //cubesize.x = step_x*scale.x*1.01;
             //cubesize.y = (float) remap(val, min_y, max_y, 0, size.y);
@@ -171,7 +178,7 @@ int main() {
     };
     float pitch = PI*0.125, yaw = -PI*0.25, orbit_dist = 25;
 
-    auto data = gen_data(150);
+    auto data = gen_data(256);
 
     int graph = 0;
 

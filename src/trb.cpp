@@ -75,7 +75,7 @@ const BajaState TR24_GAGED_GX9 = {
     .F_f = 2000, // Initial guess is about 4000 N
     .r_p = IN2M*1.1875,
     .d_p = 0.00,
-    .d_r = 0,
+    // .d_r = 0,
     .theta1 = 0, // this is wrong, but the solver will correct this
     .theta2 = PI*0.4, // this is wrong, but the solver will correct this
     .r_s = IN2M*3.3125,
@@ -132,7 +132,7 @@ double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0
     return root_secant(belt_err, r_s_min, r_s_max, N);
 }
 
-Eigen::Vector3d solve_cvt_shift(const BajaState &baja, bool debug) {
+Eigen::Vector3d solve_cvt_shift(const BajaState &baja, int debug) {
     // Precalculate derived constants
     double tau_e = matrix_linear_lookup(baja.engine_torque_curve, std::max(RADPS2RPM*baja.omega_p, baja.rpm_idle));
     tau_e = baja.throttle_scale(tau_e, baja.controls.throttle);
@@ -166,10 +166,6 @@ Eigen::Vector3d solve_cvt_shift(const BajaState &baja, bool debug) {
 
         double d_s = d_s_max - (r_s - r_s_min)*tan_phi;
 
-        auto S = solve_flyweight_position(theta1, theta2, baja.cvt_tune.p_ramp_fn, baja.L_arm, baja.r_roller, d_p, baja.x_ramp, baja.r_cage, baja.r_shoulder);
-        theta1 = S.x(0);
-        theta2 = S.x(1);
-
         double r_fly = baja.r_shoulder + baja.L_arm*sin(theta1);
         // CVT system values
         double alpha = 2*acos(clamp((r_s-r_p)/baja.L, -1, 1));
@@ -200,20 +196,21 @@ Eigen::Vector3d solve_cvt_shift(const BajaState &baja, bool debug) {
             eq1 = 0;
         }
 
-        // if (debug){
-        //     printf("d_p=%f, d_s=%f, ratio=%f, f=%f\t wrap=%f, F_sp=%f, F_fly=%f, F_ss=%f, F_helix=%f\n",
-        //         d_p, d_s, r_s/r_p, eq1, beta/alpha, F_sp, F_flyarm, F_ss, F_helix);
-        // }
+        if (debug > 1){
+            // printf("d_p=%f, d_s=%f, ratio=%f, f=%f\t wrap=%f, F_sp=%f, F_fly=%f, F_ss=%f, F_helix=%f\n",
+            printf("%f, %f, %f, %f, %f, %f, %f, %f\n",
+                d_p, d_s, r_s/r_p, eq1, F_sp, F_flyarm, F_ss, F_helix);
+        }
 
         return eq1;
     };
 
     // Sample range of objective function looking for a sign change
     //printf("Searching for sign change:\n");
-    
-    int N = 256;
+
+    int N = 100; // precision to 0.1mm
     double eq_prev = objective(0);
-    double d_p_prev = d_p_max;
+    double d_p_prev = 0;
     double d_p_cur = 0;
     double min_d_p = 0;
     double min_eq = eq_prev;
@@ -224,7 +221,6 @@ Eigen::Vector3d solve_cvt_shift(const BajaState &baja, bool debug) {
         if (abs(eq) <= abs(min_eq)) {
             min_eq = eq;
             min_d_p = d_p;
-            if (min_eq == 0) break;
         }
         d_p_cur = d_p;
         if (sign(eq) != sign(eq_prev)) {
@@ -234,22 +230,16 @@ Eigen::Vector3d solve_cvt_shift(const BajaState &baja, bool debug) {
         eq_prev = eq;
         d_p_prev = d_p_cur;
     }
-    // // printf("Sign change %s\n", sign_change ? "found!" : "not found...");
-    double S;
+    double S = min_d_p;
+    // printf("Sign change %s: [%f, %f], min_d_p=%f\n", sign_change ? "found!" : "not found...", d_p_prev, d_p_cur, min_d_p);
     if (sign_change) {
         S = root_bisection(objective, d_p_prev, d_p_cur, 10);
-        // printf("Bisection result: d_p=%f, f=%f\n", S, objective(S));
-    } else {
-        S = min_d_p;
-        // S = root_newton(objective, min_d_p, 1e-6, 30);
-        // S = root_secant(objective, d_p_max*0.5, min_d_p, 15);
-        // printf("Secant result: d_p=%f, f=%f\n", S, objective(S));;
     }
 
-    if(debug) {
+    if(debug > 0) {
         double d_p = S;
         double r_p = d_p*inv_tan_phi + r_p_min;
-        double r_s = solve_r_s(r_p, r_s_min, r_s_min + d_s_max*inv_tan_phi, L, baja.L_b0, 15);
+        double r_s = solve_r_s(r_p, r_s_min, r_s_max, L, baja.L_b0, 15);
         double d_s = d_s_max - (r_s - r_s_min)*tan_phi;
         double F_sp = baja.cvt_tune.k_p*(baja.d_p_0 + d_p);
         double F_flyarm = (baja.cvt_tune.m_fly*(baja.r_shoulder + baja.L_arm*sin(theta1))*baja.omega_p*baja.omega_p*L1*cos(theta1)*cos(theta2))

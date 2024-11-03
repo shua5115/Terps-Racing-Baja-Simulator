@@ -78,10 +78,12 @@ void primary_roller_solver() {
 
 void primary_roller_vs_d_p() {
     BajaState state = TR24_GAGED_GX9;
-    const int N = 100;
+    const int N = 101;
     printf("d_p, theta1, theta2, d_r, error, iterations, converged\n");
     for(int i = 0; i < N; i++) {
         // state.d_p = state.d_p_max/2; // reset for consistency
+        state.theta1 = 0;
+        state.theta2 = 0.4;
         state.d_p = remap(i, 0, N-1, 0, state.d_p_max);
         auto S = solve_flyweight_position(state.theta1, state.theta2, state.cvt_tune.p_ramp_fn, state.L_arm, state.r_roller, state.d_p, state.x_ramp, state.r_cage, state.r_shoulder);
         double theta1 = S.x(0);
@@ -93,8 +95,8 @@ void primary_roller_vs_d_p() {
 
 void cvt_shift_solver() {
     BajaState state = TR24_GAGED_GX9;
-    state.omega_p = 1800*RPM2RADPS;
-    state.tau_s = 2*18.5*LBF2N/FT2M; // 18.5 lb-ft, max output from engine
+    state.omega_p = 3000*RPM2RADPS;
+    state.tau_s = 1*18.5*LBF2N/FT2M; // 18.5 lb-ft, max output from engine
     state.controls.throttle = 1;
 
     auto S_fly = solve_flyweight_position(state.theta1, state.theta2,
@@ -104,13 +106,13 @@ void cvt_shift_solver() {
     state.theta1 = S_fly.x(0);
     state.theta2 = S_fly.x(1);
     
-    printf("Solver %s after %llu iterations\n", S_fly.converged ? "converged" : "did not converge", S_fly.iterations);
-    printf("Error: %e = %e^2\n", S_fly.f_of_x, sqrt(S_fly.f_of_x));
-    printf("Solution: theta1=%f deg, theta2=%f deg]\n", S_fly.x(0)*RAD2DEG, S_fly.x(1)*RAD2DEG);
+    // printf("Solver %s after %llu iterations\n", S_fly.converged ? "converged" : "did not converge", S_fly.iterations);
+    // printf("Error: %e = %e^2\n", S_fly.f_of_x, sqrt(S_fly.f_of_x));
+    // printf("Solution: theta1=%f deg, theta2=%f deg]\n", S_fly.x(0)*RAD2DEG, S_fly.x(1)*RAD2DEG);
     
-    printf("\nomega_p, tau_s, d_p, d_s, ratio, F_sp, F_flyarm, F_ss, F_helix\n");
+    printf("d_p, d_s, ratio, f, F_sp, F_flyarm, F_ss, F_helix\n");
     auto start = std::chrono::high_resolution_clock::now();
-    auto d_p = solve_cvt_shift(state)(0);
+    double d_p = solve_cvt_shift(state, 2)(0);
     auto finish = std::chrono::high_resolution_clock::now();
     auto dur = finish - start;
     printf("Finished in %f us\n", dur.count()*0.001);
@@ -140,19 +142,19 @@ void cvt_shift_vs_torque() {
             // state.d_p = state.d_p_max/2; // reset for consistency
             state.omega_p = remap(i, 0, N-1, 1800, 3000)*RPM2RADPS;
             state.tau_s = remap(j, 0, N-1, 0*18.5*LBF2N/FT2M, 18.5*LBF2N/FT2M);
-            double d_p = solve_cvt_shift(state, true)(0);
+            double d_p = solve_cvt_shift(state, 1)(0);
             state.set_ratio_from_d_p(d_p);
         }
     }
 }
 
 const TestCase tests[] = {
-    TESTFN(engine_rpm_lookup),
-    TESTFN(primary_roller_solver),
+    // TESTFN(engine_rpm_lookup),
+    // TESTFN(primary_roller_solver),
     TESTFN(primary_roller_vs_d_p),
-    TESTFN(belt_length),
-    TESTFN(cvt_shift_vs_torque),
-    // TESTFN(cvt_shift_solver),
+    // TESTFN(belt_length),
+    // TESTFN(cvt_shift_vs_torque),
+    TESTFN(cvt_shift_solver),
 };
 
 int main() {

@@ -54,6 +54,7 @@ const BajaState TR24_GAGED_GX9 = {
     .I_p = 1,
     .I_s = 1,
     .I_w = 1,
+    .F1 = 0,
     .N_fly = 4,
     .r_p_inner = 0.75*IN2M,
     .d_p_max = 10e-3,
@@ -63,16 +64,14 @@ const BajaState TR24_GAGED_GX9 = {
     .L_arm = 33.02e-3,
     .r_roller = 6.35e-3,
     .x_ramp = 37.8775e-3,
-    .F1 = 0,
     .r_s_inner = 47.625e-3,
     .d_s_max = 18e-3,
     .d_s_0 = (3-1.825)*IN2M, // 3in is the spring uncompressed length
     .r_helix = 46.0375e-3,
-    .F2 = 0,
     .tau_s = 0,
     .omega_p = 1800*RPM2RADPS,
     .omega_s = 0,
-    .F_f = 2000, // Initial guess is about 4000 N
+    // .F_f = 2000, // Initial guess is about 4000 N
     .r_p = IN2M*1.1875,
     .d_p = 0.00,
     // .d_r = 0,
@@ -132,7 +131,7 @@ double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0
     return root_secant(belt_err, r_s_min, r_s_max, N);
 }
 
-Eigen::Vector3d solve_cvt_shift(const BajaState &baja, int debug) {
+double solve_cvt_shift(const BajaState &baja, int debug) {
     // Precalculate derived constants
     double tau_e = matrix_linear_lookup(baja.engine_torque_curve, std::max(RADPS2RPM*baja.omega_p, baja.rpm_idle));
     tau_e = baja.throttle_scale(tau_e, baja.controls.throttle);
@@ -151,7 +150,6 @@ Eigen::Vector3d solve_cvt_shift(const BajaState &baja, int debug) {
     double L0 = baja.L_b0;
     double L1 = baja.L_arm;
     double L2 = baja.r_roller;
-    double rho_b = baja.rho_b();
     double tan_helix = tan(baja.cvt_tune.theta_helix);
     auto ramp = baja.cvt_tune.p_ramp_fn;
     double theta1 = baja.theta1;
@@ -160,7 +158,6 @@ Eigen::Vector3d solve_cvt_shift(const BajaState &baja, int debug) {
     auto objective = [&](double d_p){
         d_p = clamp(d_p, 0, d_p_max);
         double r_p = d_p*inv_tan_phi + r_p_min;
-
         // Constrain r_s with belt length relation independently of this numerical solution.
         double r_s = solve_r_s(r_p, r_s_min, r_s_max, L, L0, 15);
 
@@ -175,7 +172,6 @@ Eigen::Vector3d solve_cvt_shift(const BajaState &baja, int debug) {
 
         // Primary subsystem forces
         double F_sp = baja.cvt_tune.k_p*(baja.d_p_0 + d_p);
-        // whooo boy
         double F_flyarm = (baja.cvt_tune.m_fly*(r_fly)*baja.omega_p*baja.omega_p*L1*cos(theta1)*cos(theta2))
             /(L1*sin(theta1 + theta2) + L2*sin(2*theta2));
         double F1 = std::abs(baja.F1);
@@ -253,6 +249,6 @@ Eigen::Vector3d solve_cvt_shift(const BajaState &baja, int debug) {
         double eq1 = beta*(F_sp - F_flyarm) + alpha*(F_ss + F_helix);
         printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", baja.omega_p, baja.tau_s, d_p, d_s, r_s/r_p, F_sp, F_flyarm, F_ss, F_helix, eq1);
     }
-    return Eigen::Vector3d(S, theta1, theta2);
+    return S;
 }
 

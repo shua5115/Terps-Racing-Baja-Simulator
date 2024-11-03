@@ -54,6 +54,7 @@ struct BajaState {
     double I_p;         // kg-m^2, total moment of inertia of primary components
     double I_s;         // kg-m^2, total moment of inertia of secondary components
     double I_w;         // kg-m^2, total moment of inertia of all four wheels
+    double F1;          // N, Friction force which opposes shifting
     // Primary
     double N_fly;       // Number of flyweight linkages in primary
     double r_p_inner;   // m, radius where bottom of primary sheaves touch
@@ -64,24 +65,20 @@ struct BajaState {
     double L_arm;       // m, length of flyweight arm
     double r_roller;    // m, radius of rollers in primary
     double x_ramp;      // m, offset from flyweight arm pivot to furthest outwards edge of ramp, at low shift displacement
-    double F1;          // N, Kinetic friction force which opposes shifting
     // Secondary
     double r_s_inner;   // m, radius where bottom of secondary sheaves touch
     double d_s_max;     // m, max linear gap between secondary sheaves
     double d_s_0;       // m, Secondary spring initial displacement
     double r_helix;     // m, Radius of secondary helix ramp
-    double F2;          // N, Kinetic friction force which opposes shifting
 
     // Time-Dependent
 
     double tau_s;       // N-m, torque applied to secondary from gearbox
     double omega_p;     // rad/s, angular velocity of primary
     double omega_s;     // rad/s, angular velocity of secondary
-    double F_f;         // N, Friction force between sheaves (T1 - T0)
     // Primary
     double r_p;         // m, radius of belt on primary sheave
     double d_p;         // m, linear displacement of primary sheave during shift
-    // double d_r;         // m, linear displacement of roller from outermost edge of ramp
     double theta1;      // rad, angle beween flyweight arm and primary axis
     double theta2;      // rad, angle between primary ramp surface normal and primary axis
     // Secondary
@@ -95,14 +92,33 @@ struct BajaState {
         return (b_min + b_max)/2; 
     }
 
-    // Minimum radius for belt on primary sheave
     double r_p_min() const {
         return r_p_inner + 0.3825*h_v;
     }
 
-    // Minimum radius for belt on secondary sheave
     double r_s_min() const {
         return r_s_inner + 0.3825*h_v;
+    }
+
+    double r_p_max() const {
+        return r_p_min() + d_p_max/tan(phi);
+    }
+
+    double r_s_max() const {
+        return r_s_min() + d_s_max/tan(phi);
+    }
+
+    double r_fly() const {
+        return r_shoulder + L_arm*sin(theta1);
+    }
+
+    double theta_s() const {
+        return d_s/(r_helix*tan(cvt_tune.theta_helix));
+    }
+
+    // Returns wrap angle around primary
+    double alpha() const {
+        return 2*acos(clamp((r_s-r_p)/L, -1, 1));
     }
 
     double rho_b() const {
@@ -111,6 +127,28 @@ struct BajaState {
 
     double theta_s_max() const {
         return d_s_max/(r_helix*tan(cvt_tune.theta_helix));
+    }
+
+    // Forces
+
+    double F_sp() const {
+        return cvt_tune.k_p*(d_p_0 + d_p);
+    }
+
+    double F_flyarm() const {
+        return (cvt_tune.m_fly*r_fly()*omega_p*omega_p*L_arm*cos(theta1)*cos(theta2))/(L_arm*sin(theta1 + theta2) + r_roller*sin(2*theta2));
+    }
+
+    double F_ss() const {
+        return cvt_tune.k_s*(d_s_0 + d_s);
+    }
+
+    double tau_ss() const {
+        return cvt_tune.kappa_s*(cvt_tune.theta_s_0 + theta_s());
+    }
+
+    double F_helix() const {
+        return (tau_s*0.5 + tau_ss())/(r_helix*tan(cvt_tune.theta_helix));
     }
 
     // Misc
@@ -137,7 +175,7 @@ OptResults<2> solve_flyweight_position(
 double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0, unsigned int N);
 
 // Returns a vector containing d_p, theta1, theta2
-Eigen::Vector3d solve_cvt_shift(const BajaState &baja_state, int debug = 0);
+double solve_cvt_shift(const BajaState &baja_state, int debug = 0);
 
 // Calculates the current CVT shift ratio, along with other variables
 OptResults<6> solve_cvt_shift_unstable(const BajaState &baja_state);

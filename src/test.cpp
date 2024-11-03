@@ -112,7 +112,7 @@ void cvt_shift_solver() {
     
     printf("d_p, d_s, ratio, f, F_sp, F_flyarm, F_ss, F_helix\n");
     auto start = std::chrono::high_resolution_clock::now();
-    double d_p = solve_cvt_shift(state, 2)(0);
+    double d_p = solve_cvt_shift(state, 2);
     auto finish = std::chrono::high_resolution_clock::now();
     auto dur = finish - start;
     printf("Finished in %f us\n", dur.count()*0.001);
@@ -142,7 +142,7 @@ void cvt_shift_vs_torque() {
             // state.d_p = state.d_p_max/2; // reset for consistency
             state.omega_p = remap(i, 0, N-1, 1800, 3000)*RPM2RADPS;
             state.tau_s = remap(j, 0, N-1, 0*18.5*LBF2N/FT2M, 18.5*LBF2N/FT2M);
-            double d_p = solve_cvt_shift(state, 1)(0);
+            double d_p = solve_cvt_shift(state, 1);
             state.set_ratio_from_d_p(d_p);
         }
     }

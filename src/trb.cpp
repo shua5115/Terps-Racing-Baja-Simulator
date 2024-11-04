@@ -125,7 +125,7 @@ OptResults<2> solve_flyweight_position(
         return eq1*eq1 + eq2*eq2;
     };
 
-    return minimize_gradient_golden(
+    return minimize_gradient_golden<2>(
         objective, x0, x_lb, x_ub,
         1e-8, 1e-6, 0.05, 500
     );

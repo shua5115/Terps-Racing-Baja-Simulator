@@ -89,7 +89,7 @@ OptResults<N> minimize_gradient_golden(ScalarFn<N> f, Eigen::Vector<double, N> x
         x(i) = clamp(x(i), x_lb(i), x_ub(i));
     }
     double f_val = f(x);
-    Eigen::Vector<double, N> grad = gradient(f, x, grad_step);
+    Eigen::Vector<double, N> grad = gradient<N>(f, x, grad_step);
     double alpha;
     size_t iters = 0;
     bool converged = true;
@@ -108,7 +108,7 @@ OptResults<N> minimize_gradient_golden(ScalarFn<N> f, Eigen::Vector<double, N> x
         }
         iters += 1;
         if (!scaled_step) grad.normalize();
-        alpha = opt_golden_section(f, x, grad, tol, -section_size, 0); // because gradient is kept positive, alpha must be <= 0
+        alpha = opt_golden_section<N>(f, x, grad, tol, -section_size, 0); // because gradient is kept positive, alpha must be <= 0
         grad *= alpha;
         // double step_len = grad.norm();
         Eigen::Vector<double, N> new_x = x + grad;
@@ -123,7 +123,7 @@ OptResults<N> minimize_gradient_golden(ScalarFn<N> f, Eigen::Vector<double, N> x
             break;
         }
         f_val = new_f_val;
-        grad = gradient(f, x, grad_step);
+        grad = gradient<N>(f, x, grad_step);
     }
     // std::cout << "Result after iter " << iters << ": x=[" << Eigen::Transpose(x) << "], f=" << f_val << "\n";
     OptResults<N> results;

@@ -4,17 +4,6 @@
 #include "raylib.h"
 #include "raymath.h"
 
-void cvt_ratio(BajaState &state) {
-    state.controls.throttle = 1;
-    // state.d_p = state.d_p_max/2;
-    // auto S_fly = solve_flyweight_position(state.theta1, state.theta2, state.cvt_tune.p_ramp_fn, state.L_arm, state.r_roller,
-    //     state.d_p, state.x_ramp, state.r_cage, state.r_shoulder
-    // );
-    // state.theta1 = S_fly.x(0);
-    // state.theta2 = S_fly.x(1);
-    
-}
-
 struct ShiftRatioData {
     Eigen::MatrixXd omega_p, tau_s, ratio;
     ShiftRatioData() : omega_p(), tau_s(), ratio() {}

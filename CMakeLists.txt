@@ -22,9 +22,8 @@ src/test.cpp
 ${model_src}
 )
 
-add_executable(visualizer
-src/visualizer.cpp
+add_executable(shift_visualizer
+src/shift_visualizer.cpp
 ${model_src}
 )
-
-target_link_libraries(visualizer raylib)
+target_link_libraries(shift_visualizer raylib)

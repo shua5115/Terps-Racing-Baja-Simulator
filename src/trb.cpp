@@ -38,7 +38,12 @@ const BajaState TR24_GAGED_GX9 = {
     .wheelbase = 1.5003,
     .com_x = 0.5, // estimate
     .com_height = 0.2, // estimate
+    .C_d = 0.7, // from CFD
+    .A_front = 0.78, // from CAD
+    .x = 0,
+    .v = 0,
     .theta_hill = 0,
+    .g = 9.81,
     .phi = 12.5*DEG2RAD,
     .L = 9.1*IN2M,
     .L_b0 = 34*IN2M,
@@ -49,11 +54,13 @@ const BajaState TR24_GAGED_GX9 = {
     .A_b = (IN2M*0.675*7/8)*(0.4*IN2M),
     .m_b = LBF2KG*0.6,
     .E_b = 13.8e3*LBF2N/(IN2M*IN2M), // Pa = psi * N/lbf * in^2/m^2, around 95 MPa
-    .mu_b = 0.13, // from WVU paper
+    .mu_b = 100000.0, //0.13, // from WVU paper
+    .mu_b_k = 0.5, // assumed to be half
     .I_e = 1,
     .I_p = 1,
     .I_s = 1,
     .I_w = 1,
+    .F_resist = 10*LBF2N,
     .F1 = 0,
     .N_fly = 4,
     .r_p_inner = 0.75*IN2M,
@@ -70,13 +77,10 @@ const BajaState TR24_GAGED_GX9 = {
     .r_helix = 46.0375e-3,
     .tau_s = 0,
     .omega_p = 1800*RPM2RADPS,
-    .omega_s = 0,
-    // .F_f = 2000, // Initial guess is about 4000 N
     .r_p = IN2M*1.1875,
     .d_p = 0.00,
-    // .d_r = 0,
-    .theta1 = 0, // this is wrong, but the solver will correct this
-    .theta2 = PI*0.4, // this is wrong, but the solver will correct this
+    .theta1 = 0,
+    .theta2 = PI*0.4,
     .r_s = IN2M*3.3125,
     .d_s = 0.00,
 };
@@ -86,8 +90,15 @@ void BajaState::set_ratio_from_d_p(double d) {
     double inv_tan_phi = 1.0/tan_phi;
     d_p = d;
     r_p = d_p*inv_tan_phi + r_p_min();
-    r_s = solve_r_s(r_p, r_s_min(), r_s_min() + d_s_max*inv_tan_phi, L, L_b0, 15);
+    r_s = solve_r_s(r_p, r_s_min(), r_s_min() + d_s_max*inv_tan_phi, L, L_b0, 8);
     d_s = d_s_max - (r_s - r_s_min())*tan_phi;
+}
+
+double BajaState::calc_tau_s() const {
+    constexpr double rho_air = 1.225; // kg/m^3
+    double F_external = m_car*g*sin(theta_hill) + 0.5*rho_air*C_d*A_front*v*v;
+    double s_resist = sign(F_external);
+    return (r_wheel/N_g)*(s_resist*F_resist + F_external);
 }
 
 OptResults<2> solve_flyweight_position(
@@ -133,8 +144,7 @@ double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0
 
 double solve_cvt_shift(const BajaState &baja, int debug) {
     // Precalculate derived constants
-    double tau_e = matrix_linear_lookup(baja.engine_torque_curve, std::max(RADPS2RPM*baja.omega_p, baja.rpm_idle));
-    tau_e = baja.throttle_scale(tau_e, baja.controls.throttle);
+    double tau_e = baja.tau_e();
     double phi = baja.phi;
     double sin_phi = sin(phi);
     double cos_phi = cos(phi);
@@ -159,7 +169,7 @@ double solve_cvt_shift(const BajaState &baja, int debug) {
         d_p = clamp(d_p, 0, d_p_max);
         double r_p = d_p*inv_tan_phi + r_p_min;
         // Constrain r_s with belt length relation independently of this numerical solution.
-        double r_s = solve_r_s(r_p, r_s_min, r_s_max, L, L0, 15);
+        double r_s = solve_r_s(r_p, r_s_min, r_s_max, L, L0, 8);
 
         double d_s = d_s_max - (r_s - r_s_min)*tan_phi;
 
@@ -235,7 +245,7 @@ double solve_cvt_shift(const BajaState &baja, int debug) {
     if(debug > 0) {
         double d_p = S;
         double r_p = d_p*inv_tan_phi + r_p_min;
-        double r_s = solve_r_s(r_p, r_s_min, r_s_max, L, baja.L_b0, 15);
+        double r_s = solve_r_s(r_p, r_s_min, r_s_max, L, baja.L_b0, 8);
         double d_s = d_s_max - (r_s - r_s_min)*tan_phi;
         double F_sp = baja.cvt_tune.k_p*(baja.d_p_0 + d_p);
         double F_flyarm = (baja.cvt_tune.m_fly*(baja.r_shoulder + baja.L_arm*sin(theta1))*baja.omega_p*baja.omega_p*L1*cos(theta1)*cos(theta2))
@@ -252,3 +262,55 @@ double solve_cvt_shift(const BajaState &baja, int debug) {
     return S;
 }
 
+BajaDynamicsResult solve_dynamics(const BajaState &baja, double dt) {
+    BajaDynamicsResult res;
+    double N_p = (baja.F_flyarm() - baja.F_sp())/cos(baja.phi);
+    res.F_f = (baja.tau_e()/baja.r_p + baja.tau_s/baja.r_s);
+    res.slipping = abs(res.F_f) > N_p*baja.mu_b;
+    res.F_f = res.slipping ? (sign(res.F_f)*std::max(0.0, N_p*baja.mu_b_k)) : res.F_f; // ensuring sign is preserved when constraining value
+    res.a = (res.F_f*baja.r_s*baja.N_g/(baja.r_wheel) - baja.m_car*baja.g*sin(baja.theta_hill))
+        /(baja.m_car + (baja.I_e + baja.I_p)*((baja.N_g*baja.r_s)*(baja.N_g*baja.r_s)/(baja.r_wheel*baja.r_p*baja.r_wheel*baja.r_p)) +
+            baja.I_s*(baja.N_g*baja.N_g/(baja.r_wheel*baja.r_wheel)) + baja.I_w*(1.0/(baja.r_wheel*baja.r_wheel)));
+    // To integrate velocity and position, we can use this definition: u = [x, x'], where u' = [x', x'']
+    auto integrand = [&res](Eigen::Vector2d u, double t){
+        auto du = Eigen::Vector2d();
+        du(0) = u(1);
+        du(1) = res.a;
+        return du;
+    };
+    Eigen::Vector2d u = runge_kutta_4_step<double, 2>(integrand, Eigen::Vector2d(baja.x, baja.v), 0, dt);
+    res.x = u(0);
+    res.v = u(1);
+
+    if (!res.slipping) {
+        // Correct angular velocity of primary and secondary to enforce pulley ratio
+        double omega_s = res.v * baja.N_g / baja.r_wheel;
+        double H = (baja.I_p + baja.I_e)*baja.omega_p + baja.I_s*omega_s + baja.I_w*(omega_s/baja.N_g) + baja.m_car*(omega_s/baja.N_g)*baja.r_wheel*baja.r_wheel;
+        double omega_p_adj = H / (baja.I_p + baja.I_e + baja.I_s*baja.r_p/baja.r_s + baja.I_w*baja.r_p/(baja.r_s*baja.N_g) + baja.m_car*baja.r_p*baja.r_wheel*baja.r_wheel/(baja.r_s*baja.N_g));
+        res.omega_p = omega_p_adj;
+        res.v = omega_p_adj * (baja.r_p/baja.r_s) * (baja.r_wheel / baja.N_g);
+    } else {
+        // Integrate omega_p by treating the primary as a separate rigid body
+        res.omega_p = baja.omega_p + dt*(baja.tau_e() - res.F_f*baja.r_p)/(baja.I_e + baja.I_p); // Explicit euler b/c this acceleration is constant
+    }
+    
+    return res;
+}
+
+void apply_dynamics_result(BajaState &state, const BajaDynamicsResult &dynamics) {
+    state.x = dynamics.x;
+    state.v = dynamics.v;
+    state.omega_p = dynamics.omega_p;
+}
+
+BajaDynamicsResult trb_sim_step(BajaState &baja, double dt) {
+    baja.tau_s = baja.calc_tau_s();
+    auto S_fly = solve_flyweight_position(baja.theta1, baja.theta2, baja.cvt_tune.p_ramp_fn, baja.L_arm, baja.r_roller, baja.d_p, baja.x_ramp, baja.r_cage, baja.r_shoulder);
+    baja.theta1 = S_fly.x(0);
+    baja.theta2 = S_fly.x(1);
+    auto d_p = solve_cvt_shift(baja);
+    baja.set_ratio_from_d_p(d_p);
+    auto res = solve_dynamics(baja, dt);
+    apply_dynamics_result(baja, res);
+    return res;
+}

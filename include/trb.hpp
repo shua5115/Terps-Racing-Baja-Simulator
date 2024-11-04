@@ -37,7 +37,12 @@ struct BajaState {
     double wheelbase;   // m, distance between front and rear wheels
     double com_x;       // m, forward distance from rear wheel to center of mass
     double com_height;  // m, distance from ground to center of mass
-    double theta_hill;  // rad, angle of the ground
+    double C_d;         // Drag coefficient of the entire vehicle, when moving forward over flat ground
+    double A_front;     // Frontal area of the vehicle, for calculating drag force
+    double x;           // m, position of the vehicle in 1D space
+    double v;           // m/s, velocity of the vehicle in 1D space
+    double theta_hill;  // rad, angle of hill slope when driving
+    double g;           // m/s^2, acceleration of gravity
     // Powertrain
     double phi;         // rad, half of angle between sheaves
     double L;           // m, distance between primary and secondary
@@ -49,11 +54,13 @@ struct BajaState {
     double A_b;         // m^2, belt cross section area, but only the part that stretches
     double m_b;         // kg, mass of belt
     double E_b;         // Pa, Young's modulus of belt
-    double mu_b;        // Belt coefficient of friction with sheaves
+    double mu_b;        // Belt static coefficient of friction with sheaves
+    double mu_b_k;      // Belt kinetic coefficient of friction with sheaves
     double I_e;         // kg-m^2, total moment of inertia of spinning engine components
     double I_p;         // kg-m^2, total moment of inertia of primary components
     double I_s;         // kg-m^2, total moment of inertia of secondary components
     double I_w;         // kg-m^2, total moment of inertia of all four wheels
+    double F_resist;    // N, Friction force which opposes vehicle movement
     double F1;          // N, Friction force which opposes shifting
     // Primary
     double N_fly;       // Number of flyweight linkages in primary
@@ -75,7 +82,6 @@ struct BajaState {
 
     double tau_s;       // N-m, torque applied to secondary from gearbox
     double omega_p;     // rad/s, angular velocity of primary
-    double omega_s;     // rad/s, angular velocity of secondary
     // Primary
     double r_p;         // m, radius of belt on primary sheave
     double d_p;         // m, linear displacement of primary sheave during shift
@@ -84,6 +90,14 @@ struct BajaState {
     // Secondary
     double r_s;         // m, radius of belt on secondary sheave
     double d_s;         // m, linear displacement of secondary sheave during shift
+
+    // Misc
+
+    void set_ratio_from_d_p(double d);
+    
+    double throttle_scale(double torque, double u_gas) const {
+        return torque*(sin(u_gas*PI*0.5)*(1 - rpm_idle/rpm_gov) + rpm_idle/rpm_gov);
+    }
 
     // Derived Constants
 
@@ -116,7 +130,6 @@ struct BajaState {
         return d_s/(r_helix*tan(cvt_tune.theta_helix));
     }
 
-    // Returns wrap angle around primary
     double alpha() const {
         return 2*acos(clamp((r_s-r_p)/L, -1, 1));
     }
@@ -129,7 +142,14 @@ struct BajaState {
         return d_s_max/(r_helix*tan(cvt_tune.theta_helix));
     }
 
-    // Forces
+    // Forces and Moments
+
+    double calc_tau_s() const;
+
+    double tau_e() const {
+        double tau = matrix_linear_lookup(engine_torque_curve, RADPS2RPM*omega_p);
+        return throttle_scale(tau, controls.throttle);
+    }
 
     double F_sp() const {
         return cvt_tune.k_p*(d_p_0 + d_p);
@@ -150,41 +170,12 @@ struct BajaState {
     double F_helix() const {
         return (tau_s*0.5 + tau_ss())/(r_helix*tan(cvt_tune.theta_helix));
     }
-
-    // Misc
-
-    void set_ratio_from_d_p(double d);
-    
-    double throttle_scale(double torque, double u_gas) const {
-        return torque*(sin(u_gas*PI*0.5)*(1 - rpm_idle/rpm_gov) + rpm_idle/rpm_gov);
-    }
 };
 
 constexpr size_t BAJASTATE_SIZE_CHECK = sizeof(BajaState);
 
-OptResults<2> solve_flyweight_position(
-    double theta1_guess, double theta2_guess,
-    double (*ramp)(double x),
-    double L1, double L2,
-    double d_p, double x_ramp,
-    double r_cage, double r_shoulder
-);
-
-// Solve secondary radius given primary radius using root finding.
-// Per testing, numerical error is less than floating point error after N=8 for this function for all reasonable values of r_p.
-double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0, unsigned int N);
-
-// Returns a vector containing d_p, theta1, theta2
-double solve_cvt_shift(const BajaState &baja_state, int debug = 0);
-
-// Calculates the current CVT shift ratio, along with other variables
-OptResults<6> solve_cvt_shift_unstable(const BajaState &baja_state);
-
-OptResults<2> solve_cvt_shift_no_stretch(const BajaState &baja_state);
-
-// Calculates the change in vehicle speed due to the applied force,
-// then adjusts speeds of spinning components to conserve momentum.
-// void correct_momentum(const CVTState &cvt_state, BajaState &baja_state);
+// BajaState representing the initial state of the TR24 baja car with an unmodified Gaged GX9 CVT
+extern const BajaState TR24_GAGED_GX9;
 
 // Column units: RPM, N-m
 const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({
@@ -202,47 +193,38 @@ const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({
     {3800, 23.9}, // Governor prevents torque increase above 3800, need to verify behavior
 });
 
-// BajaState representing the initial state of the TR24 baja car with an unmodified Gaged GX9 CVT
-extern const BajaState TR24_GAGED_GX9;
+// Solves for theta1 and theta2 of the flyweight assembly.
+OptResults<2> solve_flyweight_position(
+    double theta1_guess, double theta2_guess,
+    double (*ramp)(double x),
+    double L1, double L2,
+    double d_p, double x_ramp,
+    double r_cage, double r_shoulder
+);
 
-// const BajaState TR24_STATE = BajaState{
-//     .engine_torque_curve=CH440_TORQUE_CURVE,
-//     .N_g=8.32,
-//     .m_car=500*LBF2KG,
-//     .r_wheel=11.5*IN2M,
-// };
+// Solve secondary radius given primary radius using root finding.
+// Per testing, numerical error is less than floating point precision after N=8 for this function for all reasonable values of r_p.
+double solve_r_s(double r_p, double r_s_min, double r_s_max, double L, double L0, unsigned int N);
 
-/*
-constexpr CVTConfig GAGED_GX9_CONFIG = {
-    .r_p = 0.975*IN2M,          // m, from WVU
-    .R_p = 2.775*IN2M,          // m, from WVU
-    .r_s = 2.498*IN2M,          // m, from WVU
-    .R_s = 3.803*IN2M,          // m, from WVU
-    .v_angle = 23*DEG2RAD,      // m, from WVU
-    .g_p = 0.8*IN2M,          // m, from WVU
-    .g_s = 0.8*IN2M,          // m, from WVU
-    .L = 9.1*IN2M,              // m, as designed
-    .l_b = 28*IN2M,             // m, measured
-    .A_b = 0.41*IN2M*IN2M,      // m^2, from WVU
-    .m_b = 0.249,               // kg, measured
-    .E_b = 95147650.646,        // Pa, =13.8 ksi, from WVU
-    .G_b = 35025367.049,        // Pa, =5.08 ksi, from WVU
-    .mu_b = 0.13,               // from WVU
-    .p_spring_x0 = 0.975*IN2M,  // m, from WVU
-    .s_spring_x0 = 1.44*IN2M,   // m, from WVU
-    .r_helix = 1.455*IN2M, // m, from WVU
-    .m_fly_arm = 0.058375612,// kg, from WVU
-    // .r_fly_min = 1.875*IN2M,    // m, from WVU
-    // .r_fly_max = 2.345*IN2M,    // m, from WVU
+// Solves d_p, displacement of the primary, for the current state
+double solve_cvt_shift(const BajaState &baja_state, int debuglevel = 0);
+
+struct BajaDynamicsResult {
+    double a; // Forward acceleration of the vehicle
+    double v; // New forward velocity of the vehicle
+    double x; // New position of the vehicle
+    double omega_p; // New angular velocity of the primary
+    double F_f; // Net belt tension between CVT sheaves, difference between slack and taut side tension
+    bool slipping; // Whether the belt is slipping on the CVT primary
 };
 
-double gaged_gx9_primary_ramp_curved(double x) {
-    // TODO, use function fit from excel
-    return 0.0;
-}
+// Solves dynamics of the vehicle based on the current state with the following idealized assumptions:
+// - Wheels cannot slip on the ground
+BajaDynamicsResult solve_dynamics(const BajaState &baja_state, double dt);
 
-double gaged_gx9_primary_ramp_flat(double x) {
-    // TODO, use function fit from excel
-    return 0.0;
-}
-*/
+// Changes values in state to reflect results from dynamics
+void apply_dynamics_result(BajaState &state, const BajaDynamicsResult &dynamics);
+
+// Updates the entire vehicle for one time step.
+// Returns the dynamics result that it applies.
+BajaDynamicsResult trb_sim_step(BajaState &state, double dt);

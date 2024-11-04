@@ -40,6 +40,9 @@ $r_{wheel}$ | m | Radius of the wheels
 $RPM_{gov}$ | rpm | Engine governor RPM
 $RPM_{idle}$ | rpm | Engine idle RPM
 $\tau_{e,max} = $ table lookup relating engine torque to engine speed | N-m | Maximum engine torque, based on engine torque curve of N-m vs. rad/s
+$C_d$ | none | Drag coefficient of the vehicle
+$A_{front}$ | m^2 | Frontal area of the vehicle, for calculating drag force
+$v$ | m/s | Forward velocity of the vehicle
 **Primary CVT Tune**
 $ramp(x)$ | function(m) -> m | Function for ramp height vs. x, where x is 0 at the highest ramp point.<br/>This function must be continuous, once differentiable, and $ramp'() < 0$.<br/>Function must be defined over range $[0, d_{p,max}]$.
 $k_p$ | N/m | Linear spring constant for primary spring
@@ -119,6 +122,7 @@ Formula | Description
 ---|---:
 $F_f \le N_p \mu_b$ | No-slip condition
 $T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$ | Slack side tension, if belt can stretch
+$F_{resist}$ | Constant rolling resistance of the vehicle, measured experimentally
 $F1 = ?$ | unknown constant friction force, always opposing shifting
 **Primary Subsystem**
 $F_{sp} = k_p (d_{0p} + d_p)$ | Force from linear primary spring
@@ -533,31 +537,70 @@ Conversion between mass and inertia: (mass) kg = (inertia times distance squared
 
 $\ddot{x} m = F$
 
-$\ddot{x} (m_{car} + (I_e + I_p)(\frac{N_g r_s}{r_{wheel} r_p})^2 + I_s (\frac{N_g}{r_{wheel}})^2 + I_w(\frac{1}{r_{wheel}})^2) = F_f \frac{r_s N_g}{r_{wheel}} + m_{car} g \sin(\theta_{ground})$
+$\ddot{x} (m_{car} + (I_e + I_p)(\frac{N_g r_s}{r_{wheel} r_p})^2 + I_s (\frac{N_g}{r_{wheel}})^2 + I_w(\frac{1}{r_{wheel}})^2) = F_f \frac{r_s N_g}{r_{wheel}} - m_{car} g \sin(\theta_{ground})$
 
-$\ddot{x} = \frac{F_f \frac{r_s N_g}{r_{wheel}} + m_{car} g \sin(\theta_{ground})}{m_{car} + (I_e + I_p)(\frac{N_g r_s}{r_{wheel} r_p})^2 + I_s (\frac{N_g}{r_{wheel}})^2 + I_w(\frac{1}{r_{wheel}})^2}$
+$\ddot{x} = \frac{F_f \frac{r_s N_g}{r_{wheel}} - m_{car} g \sin(\theta_{ground})}{m_{car} + (I_e + I_p)(\frac{N_g r_s}{r_{wheel} r_p})^2 + I_s (\frac{N_g}{r_{wheel}})^2 + I_w(\frac{1}{r_{wheel}})^2}$
 
 After solving for force equilibrium in the CVT using the applied torque from the engine and the external environment,
 the velocity can be changed by being the integral of acceleration.
-
-Using midpoint numeric integration:
-
-$\dot{x}|_{t} = \frac{\ddot{x}|_{t} + \ddot{x}|_{t - \Delta t}}{2} \Delta t$
 
 If the CVT belt is not slipping on the primary, then the following condition must hold:
 
 $\omega_p r_p = \omega_s r_s$
 
-However, momenutum must be conserved. We can consider the effective angular momentum ("H") of all components:
+$v = \omega_s \frac{r_{wheel}}{N_g} \leftrightarrow \omega_s = v \frac{N_g}{r_{wheel}}$
 
-$H = (I_p + I_e) w_p + I_s w_s + I_w (w_s/N_g) + m_{car}(w_s/N_g)r_{wheel}^2$
+However, momentum must be conserved. We can consider the effective angular momentum ("H") of all components:
 
-To correct the ratio of speeds between the primary and secondary, we can solve the two above equations for adjusted angular velocities:
+$H = (I_p + I_e) \omega_p + I_s \omega_s + I_w (\omega_s/N_g) + m_{car}(\omega_s/N_g)r_{wheel}^2$
 
-$w_{p,adj} = \frac{H N_g r_s}{m_{car} r_p r_{wheel}^2 + I_w r_p + I_e N_g r_s + I_p N_g r_s + I_s N_g r_p}$
+$H = (I_p + I_e) \omega_p + I_s (\omega_p \frac{r_p}{r_s}) + I_w ((\omega_p \frac{r_p}{r_s})/N_g) + m_{car}((\omega_p \frac{r_p}{r_s})/N_g)r_{wheel}^2$
 
-$w_{s,adj} = w_{p,adj} \frac{r_p}{r_s}$
+$H = \omega_p (I_p + I_e + I_s \frac{r_p}{r_s} + I_w \frac{r_p}{r_s N_g} + m_{car}\frac{r_p r_{wheel}^2}{r_s N_g})$
 
+$\omega_p = H / (I_p + I_e + I_s \frac{r_p}{r_s} + I_w \frac{r_p}{r_s N_g} + m_{car}\frac{r_p r_{wheel}^2}{r_s N_g})$
+
+To correct the ratio of speeds between the primary and secondary, we can solve the above equation for adjusted angular velocities:
+
+$\omega_{p,adj} = H / (I_p + I_e + I_s \frac{r_p}{r_s} + I_w \frac{r_p}{r_s N_g} + m_{car}\frac{r_p r_{wheel}^2}{r_s N_g})$
+
+$\omega_{s,adj} = \omega_{p,adj} \frac{r_p}{r_s}$
+
+$v_{adj} = \omega_{s,adj} \frac{r_{wheel}}{N_g}$
+
+If the belt is slipping, then the primary is a separate body from the rest of the vehicle, so it has its own equation of motion:
+
+$\dot{\omega_p} (I_e + I_p) = \tau_e - F_f r_p$
+
+$\dot{\omega_p} = \frac{\tau_e - F_f r_p}{I_e + I_p}$
+
+
+# Derivation of $\tau_s$
+
+For each step of the simulator, we need to know the value of $\tau_s$.
+This value is part of the steady state solution for the CVT shift, so it will be calculated based on a static FBD of the vehicle:
+
+![Vehicle FBD](figures/vehicle%20FBD.svg)
+
+All forces act along the forward axis of the vehicle except a resistive force from gravity.
+
+$\sum{F_x} = 0 = F_{wheel} - F_{resist} - m_{car}g\sin(\theta_{hill}) - (\frac{1}{2} \rho_{air} C_d A_{front} v^2)$
+
+Note that $F_{resist}$ is only applied in full if it brings the forces closer to equilibrium. So:
+
+If $|\sum{F_x}| > |F_{resist}|$, then $F_{resist}$ is applied in opposition.
+
+This relationship can be approximated as the sign of $F_{resist}$ matching the sign of forces besides $F_{wheel}$:
+
+$\sum{F_x} = 0 = F_{wheel} - s_{resist} F_{resist} - m_{car}g\sin(\theta_{hill}) - (\frac{1}{2} \rho_{air} C_d A_{front} v^2)$
+
+where $s_{resist} = sign(m_{car}g\sin(\theta_{hill}) + (\frac{1}{2} \rho_{air} C_d A_{front} v^2))$
+
+$F_{wheel}$ is directly proportional to $\tau_s$:
+
+$F_{wheel} = \tau_s \frac{N_g}{r_{wheel}} = s_{resist} F_{resist} + m_{car}g\sin(\theta_{hill}) + (\frac{1}{2} \rho_{air} C_d A_{front} v^2)$
+
+$\tau_s = \frac{r_{wheel}}{N_g} (s_{resist} F_{resist} + m_{car}g\sin(\theta_{hill}) + (\frac{1}{2} \rho_{air} C_d A_{front} v^2))$
 
 # Misc Notes
 

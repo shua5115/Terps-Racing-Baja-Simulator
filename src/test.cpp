@@ -40,7 +40,7 @@ void belt_length() {
     for(size_t i = 0; i < N; i++) {
         double d_p = remap(i, 0, N-1, 0, state.d_p_max);
         double r_p = d_p*inv_tan_phi + r_p_min;
-        double r_s = solve_r_s(r_p, r_s_min, r_s_max, L, L0, 15);
+        double r_s = solve_r_s(r_p, r_s_min, r_s_max, L, L0, 8);
         double d_s = state.d_s_max - (r_s - r_s_min)*tan_phi;
         double alpha = 2*acos(clamp((r_s-r_p)/L, -1, 1));
         double beta = 2*PI-alpha;
@@ -148,13 +148,37 @@ void cvt_shift_vs_torque() {
     }
 }
 
+void vehicle_sim_test() {
+    BajaState baja = TR24_GAGED_GX9;
+    baja.controls.throttle = 1;
+
+    size_t N = 1000;
+    double dt = 0.025;
+    
+    long long sim_time_ns = 0;
+
+    printf("t, x, v, ratio, omega_p, tau_s, F_f_noslip, N_p, slipping\n");
+    for(size_t i = 0; i <= N; i++) {
+        double t = i*dt;
+        auto start = std::chrono::high_resolution_clock::now();
+        auto res = trb_sim_step(baja, dt);
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto dur = finish - start;
+        sim_time_ns += dur.count();
+        printf("%f, %f, %f, %f, %f, %f, %f, %f, %d\n",
+            t, baja.x, baja.v, baja.r_s/baja.r_p, baja.omega_p, baja.tau_s, (baja.tau_e()/baja.r_p + baja.tau_s/baja.r_s), (baja.F_flyarm() - baja.F_sp())/cos(baja.phi), (int) res.slipping);
+    }
+    printf("Total time: %lld ms, average time per step: %f ms\n", sim_time_ns/1000, (sim_time_ns/(N+1))*1e-6);
+}
+
 const TestCase tests[] = {
     // TESTFN(engine_rpm_lookup),
     // TESTFN(primary_roller_solver),
     TESTFN(primary_roller_vs_d_p),
-    // TESTFN(belt_length),
-    // TESTFN(cvt_shift_vs_torque),
-    TESTFN(cvt_shift_solver),
+    TESTFN(belt_length),
+    TESTFN(cvt_shift_vs_torque),
+    // TESTFN(cvt_shift_solver),
+    TESTFN(vehicle_sim_test),
 };
 
 int main() {

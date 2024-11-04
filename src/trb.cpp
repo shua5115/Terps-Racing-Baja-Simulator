@@ -268,7 +268,9 @@ BajaDynamicsResult solve_dynamics(const BajaState &baja, double dt) {
     res.F_f = (baja.tau_e()/baja.r_p + baja.tau_s/baja.r_s);
     res.slipping = abs(res.F_f) > N_p*baja.mu_b;
     res.F_f = res.slipping ? (sign(res.F_f)*std::max(0.0, N_p*baja.mu_b_k)) : res.F_f; // ensuring sign is preserved when constraining value
-    res.a = (res.F_f*baja.r_s*baja.N_g/(baja.r_wheel) - baja.m_car*baja.g*sin(baja.theta_hill))
+    double F_external = baja.m_car*baja.g*sin(baja.theta_hill) + 0.5*1.225*baja.C_d*baja.A_front*baja.v*baja.v;
+    double s_resist = sign(F_external);
+    res.a = (res.F_f*baja.r_s*baja.N_g/(baja.r_wheel) - (s_resist*baja.F_resist + F_external))
         /(baja.m_car + (baja.I_e + baja.I_p)*((baja.N_g*baja.r_s)*(baja.N_g*baja.r_s)/(baja.r_wheel*baja.r_p*baja.r_wheel*baja.r_p)) +
             baja.I_s*(baja.N_g*baja.N_g/(baja.r_wheel*baja.r_wheel)) + baja.I_w*(1.0/(baja.r_wheel*baja.r_wheel)));
     // To integrate velocity and position, we can use this definition: u = [x, x'], where u' = [x', x'']
@@ -304,12 +306,16 @@ void apply_dynamics_result(BajaState &state, const BajaDynamicsResult &dynamics)
 }
 
 BajaDynamicsResult trb_sim_step(BajaState &baja, double dt) {
-    baja.tau_s = baja.calc_tau_s();
+    // 1. Solve flyweight position
     auto S_fly = solve_flyweight_position(baja.theta1, baja.theta2, baja.cvt_tune.p_ramp_fn, baja.L_arm, baja.r_roller, baja.d_p, baja.x_ramp, baja.r_cage, baja.r_shoulder);
     baja.theta1 = S_fly.x(0);
     baja.theta2 = S_fly.x(1);
+    // 2. External forces
+    baja.tau_s = baja.calc_tau_s();
+    // 3. CVT shift ratio
     auto d_p = solve_cvt_shift(baja);
     baja.set_ratio_from_d_p(d_p);
+    // 4. Vehicle dynamics
     auto res = solve_dynamics(baja, dt);
     apply_dynamics_result(baja, res);
     return res;

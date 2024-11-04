@@ -43,6 +43,7 @@ struct BajaState {
     double v;           // m/s, velocity of the vehicle in 1D space
     double theta_hill;  // rad, angle of hill slope when driving
     double g;           // m/s^2, acceleration of gravity
+    double shift_speed; // 1/s, time constant for how fast the CVT shifts
     // Powertrain
     double phi;         // rad, half of angle between sheaves
     double L;           // m, distance between primary and secondary
@@ -63,7 +64,6 @@ struct BajaState {
     double F_resist;    // N, Friction force which opposes vehicle movement
     double F1;          // N, Friction force which opposes shifting
     // Primary
-    double N_fly;       // Number of flyweight linkages in primary
     double r_p_inner;   // m, radius where bottom of primary sheaves touch
     double d_p_max;     // m, max linear gap between primary sheaves
     double d_p_0;       // m, primary spring initial displacement

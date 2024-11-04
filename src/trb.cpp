@@ -44,6 +44,7 @@ const BajaState TR24_GAGED_GX9 = {
     .v = 0,
     .theta_hill = 0,
     .g = 9.81,
+    .shift_speed = 10,
     .phi = 12.5*DEG2RAD,
     .L = 9.1*IN2M,
     .L_b0 = 34*IN2M,
@@ -54,15 +55,14 @@ const BajaState TR24_GAGED_GX9 = {
     .A_b = (IN2M*0.675*7/8)*(0.4*IN2M),
     .m_b = LBF2KG*0.6,
     .E_b = 13.8e3*LBF2N/(IN2M*IN2M), // Pa = psi * N/lbf * in^2/m^2, around 95 MPa
-    .mu_b = 100000.0, //0.13, // from WVU paper
-    .mu_b_k = 0.5, // assumed to be half
-    .I_e = 1,
-    .I_p = 1,
-    .I_s = 1,
-    .I_w = 1,
+    .mu_b = 0.6e6,
+    .mu_b_k = 0.5,
+    .I_e = 0.0327756412, // CH440 flywheel is about 14lbs with 8" diam, assuming cylindrical: mr^2/2 = 112 lb-in^2
+    .I_p = 0.01161473, // from CAD
+    .I_s = 0.00485413, // from CAD
+    .I_w = 0.9853425875, // Rear tires are 12.4lbs, Fronts are 13.06lbs, both 11.5" radius, (2*(m_front+m_rear))r^2/2 = 3367.085 lb-in^2
     .F_resist = 10*LBF2N,
     .F1 = 0,
-    .N_fly = 4,
     .r_p_inner = 0.75*IN2M,
     .d_p_max = 10e-3,
     .d_p_0 = (3 - 1.875)*IN2M, // 3in is the spring uncompressed length
@@ -264,10 +264,13 @@ double solve_cvt_shift(const BajaState &baja, int debug) {
 
 BajaDynamicsResult solve_dynamics(const BajaState &baja, double dt) {
     BajaDynamicsResult res;
-    double N_p = (baja.F_flyarm() - baja.F_sp())/cos(baja.phi);
+    double alpha = baja.alpha();
+    double beta = 2*PI - alpha;
+    // If in equilibrium, the two clamping forces will be the same. Otherwise, the stronger clamping force will dominate.
+    double N = std::max(baja.F_flyarm() - baja.F_sp(), (alpha/beta)*(baja.F_ss() + baja.F_helix()))/cos(baja.phi);
     res.F_f = (baja.tau_e()/baja.r_p + baja.tau_s/baja.r_s);
-    res.slipping = abs(res.F_f) > N_p*baja.mu_b;
-    res.F_f = res.slipping ? (sign(res.F_f)*std::max(0.0, N_p*baja.mu_b_k)) : res.F_f; // ensuring sign is preserved when constraining value
+    res.slipping = abs(res.F_f) > N*baja.mu_b;
+    res.F_f = res.slipping ? (sign(res.F_f)*std::max(0.0, N*baja.mu_b_k)) : res.F_f; // ensuring sign is preserved when constraining value
     double F_external = baja.m_car*baja.g*sin(baja.theta_hill) + 0.5*1.225*baja.C_d*baja.A_front*baja.v*baja.v;
     double s_resist = sign(F_external);
     res.a = (res.F_f*baja.r_s*baja.N_g/(baja.r_wheel) - (s_resist*baja.F_resist + F_external))
@@ -313,7 +316,8 @@ BajaDynamicsResult trb_sim_step(BajaState &baja, double dt) {
     // 2. External forces
     baja.tau_s = baja.calc_tau_s();
     // 3. CVT shift ratio
-    auto d_p = solve_cvt_shift(baja);
+    double d_p = solve_cvt_shift(baja);
+    d_p = lerp(baja.d_p, d_p, std::min(1.0, baja.shift_speed*dt));
     baja.set_ratio_from_d_p(d_p);
     // 4. Vehicle dynamics
     auto res = solve_dynamics(baja, dt);

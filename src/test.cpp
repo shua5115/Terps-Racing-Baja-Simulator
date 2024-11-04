@@ -152,8 +152,8 @@ void vehicle_sim_test() {
     BajaState baja = TR24_GAGED_GX9;
     baja.controls.throttle = 1;
 
-    size_t N = 1000;
-    double dt = 0.025;
+    size_t N = 500;
+    double dt = 0.01;
     
     long long sim_time_ns = 0;
 

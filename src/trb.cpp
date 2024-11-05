@@ -317,7 +317,15 @@ BajaDynamicsResult trb_sim_step(BajaState &baja, double dt) {
     baja.tau_s = baja.calc_tau_s();
     // 3. CVT shift ratio
     double d_p = solve_cvt_shift(baja);
-    d_p = lerp(baja.d_p, d_p, std::min(1.0, baja.shift_speed*dt));
+    // Smooth out cvt shift based on exponential decay,
+    // Linear interpolation: x = x_n + (x_n-1 - x_n)*T, where T is a value from 0-1
+    // T = exp(-Kdt), where K is a positive coefficient
+    // This makes d_p 
+    // shift_speed = 0.5 -> proportion is e^-dt/2 (slower decay)
+    // shift_speed = 1 -> proportion is e^-dt 
+    // shift_speed = 2 -> proportion is e^-2dt (faster decay)
+    // shift_speed = 10 -> e^-10dt (even faster decay)
+    d_p = d_p + (baja.d_p - d_p)*std::min(exp(-baja.shift_speed*dt), 1.0);
     baja.set_ratio_from_d_p(d_p);
     // 4. Vehicle dynamics
     auto res = solve_dynamics(baja, dt);

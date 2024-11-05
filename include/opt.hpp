@@ -1,3 +1,4 @@
+#pragma once
 // Contains functions related to optimization
 #include <iostream>
 #include <functional>

@@ -24,6 +24,7 @@ ${model_src}
 
 add_executable(shift_visualizer
 src/shift_visualizer.cpp
+src/raygraph.cpp
 ${model_src}
 )
 target_link_libraries(shift_visualizer raylib)

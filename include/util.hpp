@@ -3,17 +3,39 @@
 #include <tuple>
 #include "Eigen/Dense"
 
+#ifndef PI
 #define PI        (3.1415926535897932384626434) // precision? yes.
+#endif
+#ifndef DEG2RAD
 #define DEG2RAD   (0.0174532925199432957692369) // rad/deg
+#endif
+#ifndef RAD2DEG
 #define RAD2DEG   (57.295779513082320876798155) // deg/rad
+#endif
+#ifndef RPM2RADPS
 #define RPM2RADPS (0.1047197551196597746154214) // rpm-s/rad
+#endif
+#ifndef RADPS2RPM
 #define RADPS2RPM (9.5492965855137201461330300) // rad/rpm-s
+#endif
+#ifndef IN2M
 #define IN2M      (0.0254)                      // m/in
+#endif
+#ifndef FT2M
 #define FT2M      (0.3048)                      // m/ft
+#endif
+#ifndef LBF2N
 #define LBF2N     (4.4482216153)                // lbf/N
+#endif
+#ifndef SLUG2KG
 #define SLUG2KG   (14.593902937)                // kg/slug
+#endif
+#ifndef LBF2KG
 #define LBF2KG    (0.45359236844386)            // lbm/lbf * kg/lbm
+#endif
+#ifndef METERPS2MPH
 #define METERPS2MPH (2.2369362921)              // mi-s/m-h
+#endif
 
 // Positive modulo for types with operator% defined
 template<typename T>

@@ -6,11 +6,6 @@
 #include "orbitcam.hpp"
 #include "raygraph.hpp"
 
-struct ShiftRatioData {
-    Eigen::MatrixXd omega_p, tau_s, ratio;
-    ShiftRatioData() : omega_p(), tau_s(), ratio() {}
-};
-
 std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
     std::vector<std::thread> threads;
     threads.reserve(N);
@@ -66,7 +61,7 @@ int main() {
     Eigen::initParallel();
 
     float mouse_sensitivity = 0.005;
-    float key_sensitivity = 1;
+    float key_sensitivity = PI/12;
 
     Camera3D cam {
         .position={-10,10,-10},

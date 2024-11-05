@@ -45,8 +45,7 @@ std::function<void()> DrawScatterPlot3D(const Eigen::MatrixXd &x, const Eigen::M
             Vector3 pos, cubesize;
             Color col;
             double val = f(i, j);
-            cubesize = {(float) check_zero(step_x*scale.x, size.x)*1.025f, 0, (float)check_zero(step_z*scale.z, size.z)*1.025f};
-            cubesize.y = std::min(cubesize.x, cubesize.z);
+            cubesize = Vector3Scale({(float) size.x/N, size.y/std::max(N, M), (float) size.z/N}, 1.025);
             pos.x = (max_x==min_x) ? size.x : (float) remap(x(i, j), min_x, max_x, size.x, 0);
             pos.y = (max_y==min_y) ? 0 : (float) remap(val, min_y, max_y, 0, size.y);
             pos.z = (max_z==min_z) ? 0 : (float) remap(y(i, j), min_z, max_z, 0, size.z);

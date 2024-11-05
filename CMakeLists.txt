@@ -29,3 +29,11 @@ src/raygraph.cpp
 ${model_src}
 )
 target_link_libraries(shift_visualizer raylib)
+
+add_executable(vehicle_graph
+src/vehicle_graph.cpp
+src/orbitcam.cpp
+src/raygraph.cpp
+${model_src}
+)
+target_link_libraries(vehicle_graph raylib)

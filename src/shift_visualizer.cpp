@@ -3,6 +3,7 @@
 #include "trb.hpp"
 #include "raylib.h"
 #include "raymath.h"
+#include "orbitcam.hpp"
 #include "raygraph.hpp"
 
 struct ShiftRatioData {
@@ -91,31 +92,12 @@ int main() {
 
         // Orbital cam
         auto dmouse = IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? GetMouseDelta() : Vector2Zero();
-        yaw = yaw + mouse_sensitivity*dmouse.x + key_sensitivity*(IsKeyPressed(KEY_RIGHT) + IsKeyPressedRepeat(KEY_RIGHT) - IsKeyPressed(KEY_LEFT) - IsKeyPressedRepeat(KEY_LEFT))*dt;
-        yaw = mod_euclid(yaw, 2*PI);
-        pitch = clamp(pitch + mouse_sensitivity*dmouse.y + key_sensitivity*(IsKeyPressed(KEY_DOWN) + IsKeyPressedRepeat(KEY_DOWN) - IsKeyPressed(KEY_UP) - IsKeyPressedRepeat(KEY_UP))*dt, -PI*0.5, PI*0.5);
-        if (cam.projection == CAMERA_ORTHOGRAPHIC) {
-            cam.fovy = clamp(cam.fovy - GetMouseWheelMove(), 1, 100);
-        } else {
-            orbit_dist = clamp(orbit_dist - GetMouseWheelMove(), 1, 100);
-        }
-        double dist_from_45 = mod_euclid(yaw+PI*0.125, PI*0.25) - PI*0.125;
-        double yaw_adj = yaw;
-        double pitch_adj = pitch;
-        if (abs(dist_from_45) < 3*DEG2RAD) {
-            yaw_adj -= dist_from_45;
-        }
-        if (abs(pitch) < 3*DEG2RAD) {
-            pitch_adj = 0;
-        }
-
-        cam.position.x = orbit_dist*cosf(yaw_adj)*cosf(pitch_adj);
-        cam.position.y = orbit_dist*sinf(pitch_adj);
-        cam.position.z = orbit_dist*sinf(yaw_adj)*cosf(pitch_adj);
-        cam.up.x = -cosf(yaw_adj)*sinf(pitch_adj);
-        cam.up.y = cosf(pitch_adj);
-        cam.up.z = -sinf(yaw_adj)*sinf(pitch_adj);
-
+        Vector3 orbitcam_input;
+        orbitcam_input.x = mouse_sensitivity*dmouse.x + key_sensitivity*(IsKeyPressed(KEY_RIGHT) + IsKeyPressedRepeat(KEY_RIGHT) - IsKeyPressed(KEY_LEFT) - IsKeyPressedRepeat(KEY_LEFT));
+        orbitcam_input.y = mouse_sensitivity*dmouse.y + key_sensitivity*(IsKeyPressed(KEY_DOWN) + IsKeyPressedRepeat(KEY_DOWN) - IsKeyPressed(KEY_UP) - IsKeyPressedRepeat(KEY_UP));
+        orbitcam_input.z = -GetMouseWheelMove();
+        UpdateOrbitCamera(&cam, orbitcam_input, &yaw, &pitch, &orbit_dist, {1, 100}, true);
+        
         for(int key = KEY_ONE; key <= KEY_NINE; key++) {
             if (IsKeyPressed(key)) graph = key - KEY_ONE;
         }

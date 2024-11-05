@@ -24,6 +24,7 @@ ${model_src}
 
 add_executable(shift_visualizer
 src/shift_visualizer.cpp
+src/orbitcam.cpp
 src/raygraph.cpp
 ${model_src}
 )

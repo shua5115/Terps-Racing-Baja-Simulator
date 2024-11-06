@@ -19,4 +19,6 @@ struct PlotConfig {
     }
 };
 
+Shader ScatterShader();
+
 std::function<void()> DrawScatterPlot3D(const Eigen::MatrixXd &x, const Eigen::MatrixXd &y, const Eigen::MatrixXd &f, Vector3 position, Vector3 size, Camera cam, PlotConfig<3> config);

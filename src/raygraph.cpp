@@ -5,6 +5,11 @@
 // Draws a 3D bar plot.
 // Axis labels are drawn using the returned lambda while in the default draw mode.
 std::function<void()> DrawScatterPlot3D(const Eigen::MatrixXd &x, const Eigen::MatrixXd &y, const Eigen::MatrixXd &f, Vector3 position, Vector3 size, Camera cam, PlotConfig<3> config) {
+    static Mesh mesh = {0};
+    static std::vector<Matrix> transforms;
+    if (mesh.vertices == NULL) {
+        mesh = GenMeshCube(1, 1, 1);
+    }
     const char *title=config.title;
     const char *xlabel=config.axis_labels[0];
     const char *ylabel=config.axis_labels[1];
@@ -30,31 +35,43 @@ std::function<void()> DrawScatterPlot3D(const Eigen::MatrixXd &x, const Eigen::M
     position = Vector3Subtract(position, Vector3Scale(size, 0.5f));
     // Axes
     float GAP = 4;
-    auto x_axis_start = Vector3Add({size.x + GAP*step_x*scale.x, 0, -GAP*step_z*scale.z}, position);
-    auto x_axis_end = Vector3Add({0, 0, -GAP*step_z*scale.z}, position);
-    auto y_axis_start = Vector3Add({size.x + GAP*step_x*scale.x, 0, -GAP*step_z*scale.z}, position);
-    auto y_axis_end = Vector3Add({size.x + GAP*step_x*scale.x, size.y, -GAP*step_z*scale.z}, position);
-    auto z_axis_start = Vector3Add({size.x + GAP*step_x*scale.x, 0, -GAP*step_z*scale.z}, position);
-    auto z_axis_end = Vector3Add({size.x + GAP*step_x*scale.x, 0, size.z}, position);
-    DrawCubeV(Vector3Lerp(x_axis_start, x_axis_end, 0.5f), {Vector3Distance(x_axis_start, x_axis_end), step_z*scale.z, step_z*scale.z}, RED);
-    DrawCubeV(Vector3Lerp(y_axis_start, y_axis_end, 0.5f), {step_x*scale.x, Vector3Distance(y_axis_start, y_axis_end), step_z*scale.z}, GREEN);
-    DrawCubeV(Vector3Lerp(z_axis_start, z_axis_end, 0.5f), {step_x*scale.x, step_x*scale.x, Vector3Distance(x_axis_start, x_axis_end)}, BLUE);
-    
+    float axis_size = 0.005f*Vector3Length(size);
+    auto x_axis_start = Vector3Add({size.x + GAP*axis_size, 0, -GAP*axis_size}, position);
+    auto x_axis_end = Vector3Add({0, 0, -GAP*axis_size}, position);
+    auto y_axis_start = Vector3Add({size.x + GAP*axis_size, 0, -GAP*axis_size}, position);
+    auto y_axis_end = Vector3Add({size.x + GAP*axis_size, size.y, -GAP*axis_size}, position);
+    auto z_axis_start = Vector3Add({size.x + GAP*axis_size, 0, -GAP*axis_size}, position);
+    auto z_axis_end = Vector3Add({size.x + GAP*axis_size, 0, size.z}, position);
+    DrawCubeV(Vector3Lerp(x_axis_start, x_axis_end, 0.5f), {Vector3Distance(x_axis_start, x_axis_end), axis_size, axis_size}, RED);
+    DrawCubeV(Vector3Lerp(y_axis_start, y_axis_end, 0.5f), {axis_size, Vector3Distance(y_axis_start, y_axis_end), axis_size}, GREEN);
+    DrawCubeV(Vector3Lerp(z_axis_start, z_axis_end, 0.5f), {axis_size, axis_size, Vector3Distance(x_axis_start, x_axis_end)}, BLUE);
+
+    Vector3 pos;
+    Vector3 cubesize = Vector3Scale({(float) size.x/N, size.y/std::max(N, M), (float) size.z/N}, 1.025);
+    Material mtrl = LoadMaterialDefault();
+    mtrl.shader = ScatterShader();
+    Vector3 y_bounds = {position.y, (float) remap(0, min_y, max_y, position.y, position.y + size.y), position.y + size.y};
+    SetShaderValue(mtrl.shader, GetShaderLocation(mtrl.shader, "y_bounds"), &y_bounds, SHADER_UNIFORM_VEC3);
+    transforms.resize(N*M, {0});
     for(unsigned int i = 0; i < N; i++) {
         for(unsigned int j = 0; j < M; j++) {
-            Vector3 pos, cubesize;
-            Color col;
             double val = f(i, j);
-            cubesize = Vector3Scale({(float) size.x/N, size.y/std::max(N, M), (float) size.z/N}, 1.025);
             pos.x = (max_x==min_x) ? size.x : (float) remap(x(i, j), min_x, max_x, size.x, 0);
             pos.y = (max_y==min_y) ? 0 : (float) remap(val, min_y, max_y, 0, size.y);
             pos.z = (max_z==min_z) ? 0 : (float) remap(y(i, j), min_z, max_z, 0, size.z);
-            col = ColorFromHSV(remap(val, min_y, max_y, 240, 0), 0.9, (abs(val) < 2*step_y) ? 0.0 : 1.0);
             pos = Vector3Add(pos, position);
-            DrawCubeV(pos, cubesize, col);
+            transforms[i*M+j].m0 = cubesize.x;
+            transforms[i*M+j].m5 = cubesize.y;
+            transforms[i*M+j].m10 = cubesize.z;
+            transforms[i*M+j].m12 = pos.x;
+            transforms[i*M+j].m13 = pos.y;
+            transforms[i*M+j].m14 = pos.z;
+            transforms[i*M+j].m15 = 1.0f;
         }
     }
-    
+    DrawMeshInstanced(mesh, mtrl, transforms.data(), (int) (N*M));
+    RL_FREE(mtrl.maps);
+
     Vector2 center = GetWorldToScreen(Vector3Add(position, Vector3Scale(size, 0.5f)), cam);
     Vector2 title_pos = Vector2Add(center, {0,-0.5f*Vector2Distance(GetWorldToScreen(size, cam), GetWorldToScreen(Vector3Zero(), cam))});
     label_data[0] = std::tuple<Vector2, Vector2, double>(GetWorldToScreen(x_axis_start, cam), {MeasureTextEx(font, "_", fontsize, font_spacing).x, 0}, min_x);
@@ -96,4 +113,58 @@ std::function<void()> DrawScatterPlot3D(const Eigen::MatrixXd &x, const Eigen::M
     };
 
     return callback;
+}
+
+static Shader scatter_shader = {0};
+
+Shader ScatterShader() {
+    if (IsShaderReady(scatter_shader)) return scatter_shader;
+    scatter_shader = LoadShaderFromMemory(
+R"V0G0N(#version 100
+
+// Input vertex attributes
+attribute vec3 vertexPosition;
+attribute vec2 vertexTexCoord;
+attribute vec3 vertexNormal;
+attribute vec4 vertexColor;
+
+// Input uniform values
+attribute mat4 instanceTransform;
+uniform mat4 mvp;
+
+// Output vertex attributes (to fragment shader)
+varying vec2 fragTexCoord;
+varying vec4 fragColor;
+
+uniform vec3 y_bounds;
+
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+void main()
+{
+    // Send vertex attributes to fragment shader
+    fragTexCoord = vertexTexCoord;
+
+    float t = (2.0/3.0)*(instanceTransform[3].y - y_bounds.z)/(y_bounds.x - y_bounds.z);
+    
+    float close_to_zero = step(0.001, abs(instanceTransform[3].y - y_bounds.y));
+
+    fragColor = vec4(close_to_zero*hsv2rgb(vec3(t, 1.0, 1.0)), 1.0); // * vertexColor*;
+
+    // Calculate final vertex position
+    gl_Position = mvp*instanceTransform*vec4(vertexPosition, 1.0);
+}
+)V0G0N",
+    NULL);
+    if (!IsShaderReady(scatter_shader)) {
+        printf("ERROR LOADING SCATTER SHADER!!!\n");
+    }
+    scatter_shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(scatter_shader, "mvp");
+    scatter_shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(scatter_shader, "instanceTransform");
+    return scatter_shader;
 }

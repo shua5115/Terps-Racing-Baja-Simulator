@@ -87,7 +87,6 @@ int main() {
         }
 
         BeginMode3D(cam);
-        
         std::function<void()> draw_labels = [](){};
         auto config = PlotConfig<3>("", {"x", "y", "z"}, 40);
         switch(graph) {

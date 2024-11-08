@@ -72,8 +72,25 @@ std::function<void()> DrawScatterPlot3D(const Eigen::MatrixXd &x, const Eigen::M
     DrawMeshInstanced(mesh, mtrl, transforms.data(), (int) (N*M));
     RL_FREE(mtrl.maps);
 
-    Vector2 center = GetWorldToScreen(Vector3Add(position, Vector3Scale(size, 0.5f)), cam);
-    Vector2 title_pos = Vector2Add(center, {0,-0.5f*Vector2Distance(GetWorldToScreen(size, cam), GetWorldToScreen(Vector3Zero(), cam))});
+
+    // Restore position to be centered
+    position = Vector3Add(position, Vector3Scale(size, 0.5f));
+    Vector2 center = GetWorldToScreen(position, cam);
+    Vector2 bounds_min = {INFINITY, INFINITY};
+    Vector2 bounds_max = {-INFINITY, -INFINITY};
+    for(int i = 0; i < 360; i++) {
+        Matrix rot_yaw = MatrixRotateY(remap(i, 0, 360, 0, 2*PI));
+        Vector3 p1 =  Vector3Add(position, Vector3Transform(Vector3Multiply(size, {0.5, -0.5, 0.5}), rot_yaw));
+        Vector3 p2 = Vector3Add(position, Vector3Transform(Vector3Multiply(size, {0.5, 0.5, 0.5}), rot_yaw));
+        Vector2 s1 = GetWorldToScreen(p1, cam);
+        Vector2 s2 = GetWorldToScreen(p2, cam);
+        bounds_min.x = std::min({bounds_min.x, s1.x, s2.x});
+        bounds_min.y = std::min({bounds_min.y, s1.y, s2.y});
+        bounds_max.x = std::max({bounds_max.x, s1.x, s2.x});
+        bounds_max.y = std::max({bounds_max.y, s1.y, s2.y});
+    }
+
+    Vector2 title_pos = {center.x, bounds_min.y};
     label_data[0] = std::tuple<Vector2, Vector2, double>(GetWorldToScreen(x_axis_start, cam), {MeasureTextEx(font, "_", fontsize, font_spacing).x, 0}, min_x);
     label_data[1] = std::tuple<Vector2, Vector2, double>(GetWorldToScreen(x_axis_end, cam), {MeasureTextEx(font, "_", fontsize, font_spacing).x, 0}, max_x);
     label_data[2] = std::tuple<Vector2, Vector2, double>(GetWorldToScreen(y_axis_start, cam), Vector2Multiply(MeasureTextEx(font, TextFormat("_%.2f", min_y), fontsize, font_spacing), {-0.5, -1}), min_y);
@@ -107,7 +124,7 @@ std::function<void()> DrawScatterPlot3D(const Eigen::MatrixXd &x, const Eigen::M
         }
         Vector2 titlepos = title_pos; // redefine to remove const
         Vector2 titlesize = MeasureTextEx(font, title, fontsize, font_spacing);
-        titlepos = Vector2Add(titlepos, Vector2Scale(titlesize, -0.5f));
+        titlepos = Vector2Add(titlepos, Vector2Multiply(titlesize, {-0.5f, -2.5f}));
         titlepos = {floorf(titlepos.x), floorf(titlepos.y)};
         DrawTextEx(font, title, titlepos, fontsize, font_spacing, BLACK);
     };

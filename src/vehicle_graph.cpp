@@ -65,10 +65,10 @@ int main() {
 
     int graph = 0;
 
-    SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
+    SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
 
     InitWindow(720, 720, "CVT Graphs");
-    
+    SetTargetFPS(144);
     while(!WindowShouldClose()) {
         float dt = GetFrameTime();
         BeginDrawing();
@@ -99,6 +99,16 @@ int main() {
                 config.title = "ratio vs. time, hill angle";
                 config.axis_labels = {"time", "hill angle", "ratio"};
                 draw_labels = DrawScatterPlot3D(data[0], data[5], data[4], {0, 0, 0}, {10, 4, 10}, cam, config);
+                break;
+            case 2:
+                config.title = "v vs. time, hill angle";
+                config.axis_labels = {"time", "hill angle", "v"};
+                draw_labels = DrawScatterPlot3D(data[0], data[5], data[2], {0, 0, 0}, {10, 4, 10}, cam, config);
+                break;
+            case 3:
+                config.title = "v, omega_p vs. time";
+                config.axis_labels = {"v", "omega_p", "time"};
+                draw_labels = DrawScatterPlot3D(data[2], data[3], data[0], {0, 0, 0}, {10, 4, 10}, cam, config);
                 break;
         }
         EndMode3D();

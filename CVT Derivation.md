@@ -302,6 +302,39 @@ $T_c = \rho_b A_b (r_s\omega_s)^2$ Secondary-based linear belt speed is used, be
 $T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 1) - \rho_b A_b (r_s\omega_s)^2$ 
 
 
+# Derivation of No-Slip Condition
+
+A common formula for V-belts is the maximum amount of tension before the belt slips:
+
+$T_0 = T_1 \exp(\alpha \mu_b/\sin(\phi))$
+
+Converting this into a condition for no slip:
+
+$T_0 > T_1 \exp(\alpha \mu_b/\sin(\phi))$
+
+Using this relation to isolate $T_0$ and $F_f$:
+
+$T_1 = F_f + T_0$
+
+$T_0 > (F_f + T_0) \exp(\alpha \mu_b/\sin(\phi))$
+
+$T_0 > F_f \exp(\alpha \mu_b/\sin(\phi)) + T_0 \exp(\alpha \mu_b/\sin(\phi))$
+
+$T_0 (1 - \exp(\alpha \mu_b/\sin(\phi))) > F_f \exp(\alpha \mu_b/\sin(\phi))$
+
+$T_0 (\exp(-\alpha \mu_b/\sin(\phi)) - 1) > F_f$
+
+In this form, we can obtain constrained version of F_f:
+
+$F_f = \min(F_f, T_0 (\exp(-\alpha \mu_b/\sin(\phi)) - 1))$
+
+However, this form requires knowing the value of $T_0$.
+The constant belt length assumption allows solving CVT equilibrium without knowing $T_0$.
+So, $T_0$ will have to be obtained a different way.
+
+The static tension in the belt is a result of the belt stretching due to the radii of the CVT sheaves.
+However, the constant belt length assumption makes that value inaccessible.
+
 # Constant Belt Length Assumption
 
 However, after an initial implementation of the numeric solution to the CVT shift, it was determined that the belt stretching is the third degree of freedom in the system which introduces instability in the solver. The instabilty comes from the change in belt stretch being on a much smaller order of magnitude to the other values. So, in order to make the system's numerical solution with gradient descent more stable, the assumption that the belt doesn't stretch makes the solution more stable and faster to solve.

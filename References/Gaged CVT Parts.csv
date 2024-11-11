@@ -1,0 +1,8 @@
+"primary spring color","black","orange","purple"
+"k_p (lb/in)",45,60,80
+
+"secondary spring color","yellow","red"
+"k_s (lb/in)",22.75,14.65
+"kappa_s (lb-in/rad)",14.65,0.5920
+
+"theta_helix (deg)",24,28,32,33,36,38,40,42

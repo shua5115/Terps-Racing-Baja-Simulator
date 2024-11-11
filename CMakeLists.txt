@@ -19,7 +19,13 @@ src/util.cpp
 
 add_executable(test
 src/test.cpp
+src/csv.cpp
 ${model_src}
+)
+
+add_executable(test_csv
+src/test_csv.cpp
+src/csv.cpp
 )
 
 add_executable(shift_visualizer

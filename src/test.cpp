@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include "trb.hpp"
+#include "csv.hpp"
 
 // bs to define an assert macro
 #define MACRO_STR(x) #x

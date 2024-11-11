@@ -42,9 +42,11 @@ const BajaState TR24_GAGED_GX9 = {
     .A_front = 0.78, // from CAD
     .x = 0,
     .v = 0,
-    .theta_hill = 0,
-    .g = 9.81,
     .shift_speed = 10,
+    .g = 9.81,
+    .theta_hill = 0,
+    .mu_ground = 0.9,
+    .rho_air = 1.225,
     .phi = 12.5*DEG2RAD,
     .L = 9.1*IN2M,
     .L_b0 = 34*IN2M,
@@ -94,11 +96,14 @@ void BajaState::set_ratio_from_d_p(double d) {
     d_s = d_s_max - (r_s - r_s_min())*tan_phi;
 }
 
+double BajaState::F_total_resist() const {
+    double F_external = 0.5*rho_air*C_d*A_front*v*v;
+    double F_brake = controls.brake_pedal*max_brake_clamp*mu_brake*(r_rotor/r_wheel);
+    return F_resist + F_external + F_brake;
+}
+
 double BajaState::calc_tau_s() const {
-    constexpr double rho_air = 1.225; // kg/m^3
-    double F_external = m_car*g*sin(theta_hill) + 0.5*rho_air*C_d*A_front*v*v;
-    double s_resist = sign(F_external);
-    return (r_wheel/N_g)*(s_resist*F_resist + F_external);
+    return (r_wheel/N_g)*(m_car*g*sin(theta_hill) + F_total_resist());
 }
 
 OptResults<2> solve_flyweight_position(
@@ -262,25 +267,42 @@ double solve_cvt_shift(const BajaState &baja, int debug) {
     return S;
 }
 
+double BajaState::M_effective(bool belt_slipping) const {
+    double M = (m_car + I_s*(N_g*N_g/(r_wheel*r_wheel)) + I_w*(1.0/(r_wheel*r_wheel)));
+    if (!belt_slipping) M += (I_e + I_p)*((N_g*N_g*r_s*r_s)/(r_wheel*r_wheel*r_p*r_p));
+    return M;
+}
+
 BajaDynamicsResult solve_dynamics(const BajaState &baja, double dt) {
     BajaDynamicsResult res;
     double alpha = baja.alpha();
     double beta = 2*PI - alpha;
+    
     // If in equilibrium, the two clamping forces will be the same. Otherwise, the stronger clamping force will dominate.
-    double N = std::max(baja.F_flyarm() - baja.F_sp(), (alpha/beta)*(baja.F_ss() + baja.F_helix()))/cos(baja.phi);
+    // double N = std::max((baja.F_flyarm() - baja.F_sp())/alpha, (baja.F_ss() + baja.F_helix())/beta)/cos(baja.phi);
+    // N is in units of N/rad, as a distributed load
     res.F_f = (baja.tau_e()/baja.r_p + baja.tau_s/baja.r_s);
-    res.slipping = abs(res.F_f) > N*baja.mu_b;
-    res.F_f = res.slipping ? (sign(res.F_f)*std::max(0.0, N*baja.mu_b_k)) : res.F_f; // ensuring sign is preserved when constraining value
-    double F_external = baja.m_car*baja.g*sin(baja.theta_hill) + 0.5*1.225*baja.C_d*baja.A_front*baja.v*baja.v;
-    double s_resist = sign(F_external);
-    res.a = (res.F_f*baja.r_s*baja.N_g/(baja.r_wheel) - (s_resist*baja.F_resist + F_external))
-        /(baja.m_car + (baja.I_e + baja.I_p)*((baja.N_g*baja.r_s)*(baja.N_g*baja.r_s)/(baja.r_wheel*baja.r_p*baja.r_wheel*baja.r_p)) +
-            baja.I_s*(baja.N_g*baja.N_g/(baja.r_wheel*baja.r_wheel)) + baja.I_w*(1.0/(baja.r_wheel*baja.r_wheel)));
+    // res.slipping = abs(res.F_f) > N*baja.mu_b;
+    res.slipping = false;
+    
+    // New no-slip condition:
+    // T0 > T1*exp(alpha*mu_b/sin(phi))
+    // T1 = F_f + T0
+    // T0 > (F_f + T0)*exp(alpha*mu_b/sin(phi))
+    // T0 > F_f*exp(alpha*mu_b/sin(phi)) + T0*exp(alpha*mu_b/sin(phi))
+    // T0*(1 - exp(alpha*mu_b/sin(phi))) > F_f*exp(alpha*mu_b/sin(phi))
+    // T0*(exp(-alpha*mu_b/sin(phi)) - 1) > F_f
+    // F_f = min(F_f, T0*(exp(-alpha*mu_b/sin(phi)) - 1))
+    
+    // res.F_f = res.slipping ? (sign(res.F_f)*std::max(0.0, N*baja.mu_b_k)) : res.F_f; // ensuring sign is preserved when constraining value
     // To integrate velocity and position, we can use this definition: u = [x, x'], where u' = [x', x'']
-    auto integrand = [&res](Eigen::Vector2d u, double t){
+    auto integrand = [&res, &baja](Eigen::Vector2d u, double t){
         auto du = Eigen::Vector2d();
+        // dx/dt = x'
         du(0) = u(1);
-        du(1) = res.a;
+        // dx'/dt = acceleration of the car
+        // Resistance forces on the car always act opposite to direction of v. This is captured with -sign(u(1)).
+        du(1) = (res.F_f*baja.r_s*baja.N_g/(baja.r_wheel) - sign(u(1))*baja.F_total_resist() - baja.m_car*baja.g*sin(baja.theta_hill))/baja.M_effective(res.slipping);
         return du;
     };
     Eigen::Vector2d u = runge_kutta_4_step<double, 2>(integrand, Eigen::Vector2d(baja.x, baja.v), 0, dt);

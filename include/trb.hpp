@@ -41,9 +41,16 @@ struct BajaState {
     double A_front;     // Frontal area of the vehicle, for calculating drag force
     double x;           // m, position of the vehicle in 1D space
     double v;           // m/s, velocity of the vehicle in 1D space
-    double theta_hill;  // rad, angle of hill slope when driving
-    double g;           // m/s^2, acceleration of gravity
     double shift_speed; // 1/s, time constant for how fast the CVT shifts
+    // Rear Brakes (assuming only rear brakes)
+    double r_rotor;     // m, radius of the rear brake rotor
+    double mu_brake;    // coefficient of friction for brake pads on rotor
+    double max_brake_clamp; // N, maximum clamping force the brake caliper can apply to the rotor
+    // Environment
+    double g;           // m/s^2, acceleration of gravity
+    double theta_hill;  // rad, angle of hill slope when driving
+    double mu_ground;   // coefficient of friction between tires and ground surface
+    double rho_air;     // kg/m^3, density of ambient air
     // Powertrain
     double phi;         // rad, half of angle between sheaves
     double L;           // m, distance between primary and secondary
@@ -144,6 +151,9 @@ struct BajaState {
 
     // Forces and Moments
 
+    // Effective mass of the vehicle (includes spinning mass of all components)
+    double M_effective(bool belt_slipping = false) const;
+
     double calc_tau_s() const;
 
     double tau_e() const {
@@ -170,6 +180,17 @@ struct BajaState {
     double F_helix() const {
         return (tau_s*0.5 + tau_ss())/(r_helix*tan(cvt_tune.theta_helix));
     }
+
+    double F_wheel(double F_f) const {
+        return F_f*r_s*N_g/r_wheel;
+    }
+
+    // Sum of all resistance forces on the car:
+    // - Rolling resistance
+    // - Aerodynamic drag
+    // - Applied brake force
+    // Does NOT include force from gravity.
+    double F_total_resist() const;
 };
 
 constexpr size_t BAJASTATE_SIZE_CHECK = sizeof(BajaState);

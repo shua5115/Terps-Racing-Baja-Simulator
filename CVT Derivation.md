@@ -335,6 +335,47 @@ So, $T_0$ will have to be obtained a different way.
 The static tension in the belt is a result of the belt stretching due to the radii of the CVT sheaves.
 However, the constant belt length assumption makes that value inaccessible.
 
+![Belt FBD](figures/belt%20Fx.svg)
+
+$\sum{F_x} = 0 = -F_{bpx}+ (T_0 + F_f)\cos(\alpha/2 - \pi/2) + T_0\cos(\alpha/2 - \pi/2)$
+
+$F_{bpx}$ is the "horizontal" component of the primary clamping force distributed along the sheave contact.
+The integral is divided by alpha to account for the load distribution, making this like an "average" horizontal force.
+$F_{bp}$ does not depend on theta, so it can be considered a constant.
+
+$F_{bpx} = \frac{1}{\alpha} \int_{-\alpha/2}^{\alpha/2}{F_{bp}\tan(\phi) \cos(\theta) d\theta}$
+
+$F_{bpx} = \frac{F_{bp}\tan(\phi)}{\alpha} (\sin(\alpha/2) - \sin(-\alpha/2))$
+
+$F_{bpx} = \frac{2 F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha}$
+
+$\frac{2 F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha} = (2T_0 + F_f)\cos(\alpha/2 - \pi/2)$
+
+Solving for $T_0$
+
+$\frac{2 F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha} - F_f \cos(\alpha/2 - \pi/2) = 2T_0\cos(\alpha/2 - \pi/2)$
+
+$T_0 = \frac{\frac{2 F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha} - F_f \cos(\alpha/2 - \pi/2)}{2\cos(\alpha/2 - \pi/2)}$
+
+$T_0 = \frac{2 F_{bp}\tan(\phi)\sin(\alpha/2) - F_f \alpha \cos(\alpha/2 - \pi/2)}{2\alpha\cos(\alpha/2 - \pi/2)}$
+
+$T_0 = \frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\cos(\alpha/2 - \pi/2)} - \frac{F_f \alpha \cos(\alpha/2 - \pi/2)}{2\alpha\cos(\alpha/2 - \pi/2)}$
+
+Plugging into no-slip equation:
+
+$(\frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\cos(\alpha/2 - \pi/2)} - \frac{F_f \alpha \cos(\alpha/2 - \pi/2)}{2\alpha\cos(\alpha/2 - \pi/2)}) (\exp(-\alpha \mu_b/\sin(\phi)) - 1) > F_f$
+
+Isolating $F_f$ on one side of the inequality:
+
+$(\frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\cos(\alpha/2 - \pi/2)}) (\exp(-\alpha \mu_b/\sin(\phi)) - 1) > F_f (1 + \frac{\alpha\cos(\alpha/2-\pi/2)}{2\alpha\cos(\alpha/2 - \pi/2)} (\exp(-\alpha \mu_b/\sin(\phi)) - 1))$
+
+$(\frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\cos(\alpha/2 - \pi/2)}) (\exp(-\alpha \mu_b/\sin(\phi)) - 1) > F_f (1 + \frac{1}{2} (\exp(-\alpha \mu_b/\sin(\phi)) - 1))$
+
+$(F_{bp}\tan(\phi)\sin(\alpha/2)) (\exp(-\alpha \mu_b/\sin(\phi)) - 1) > F_f \alpha\cos(\alpha/2 - \pi/2) (1 + \frac{1}{2} (\exp(-\alpha \mu_b/\sin(\phi)) - 1))$
+
+$\frac{(F_{bp}\tan(\phi)\sin(\alpha/2)) (\exp(-\alpha \mu_b/\sin(\phi)) - 1)}{\alpha\cos(\alpha/2 - \pi/2) (1 + \frac{1}{2} (\exp(-\alpha \mu_b/\sin(\phi)) - 1))} > F_f$
+
+
 # Constant Belt Length Assumption
 
 However, after an initial implementation of the numeric solution to the CVT shift, it was determined that the belt stretching is the third degree of freedom in the system which introduces instability in the solver. The instabilty comes from the change in belt stretch being on a much smaller order of magnitude to the other values. So, in order to make the system's numerical solution with gradient descent more stable, the assumption that the belt doesn't stretch makes the solution more stable and faster to solve.

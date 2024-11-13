@@ -57,8 +57,7 @@ const BajaState TR24_GAGED_GX9 = {
     .A_b = (IN2M*0.675*7/8)*(0.4*IN2M),
     .m_b = LBF2KG*0.6,
     .E_b = 13.8e3*LBF2N/(IN2M*IN2M), // Pa = psi * N/lbf * in^2/m^2, around 95 MPa
-    .mu_b = 0.6e6,
-    .mu_b_k = 0.5,
+    .mu_b = 0.85,
     .I_e = 0.0327756412, // CH440 flywheel is about 14lbs with 8" diam, assuming cylindrical: mr^2/2 = 112 lb-in^2
     .I_p = 0.01161473, // from CAD
     .I_s = 0.00485413, // from CAD
@@ -86,6 +85,17 @@ const BajaState TR24_GAGED_GX9 = {
     .r_s = IN2M*3.3125,
     .d_s = 0.00,
 };
+
+double BajaState::F_f_max() const {
+    double a = alpha();
+    double friction_factor = exp(a*mu_b/sin(phi));
+    double denom = (a*(0.5 + 0.5*friction_factor));
+    // if (denom == 0) return INFINITY;
+    double b = 2*PI - a;
+    double F_bp = F_flyarm() - F_sp();
+    double F_bs = (a/b)*(F_ss() + F_helix());
+    return (std::max(F_bp, F_bs)*tan(phi)*(friction_factor - 1))/denom;
+}
 
 void BajaState::set_ratio_from_d_p(double d) {
     double tan_phi = tan(phi);
@@ -282,19 +292,14 @@ BajaDynamicsResult solve_dynamics(const BajaState &baja, double dt) {
     // double N = std::max((baja.F_flyarm() - baja.F_sp())/alpha, (baja.F_ss() + baja.F_helix())/beta)/cos(baja.phi);
     // N is in units of N/rad, as a distributed load
     res.F_f = (baja.tau_e()/baja.r_p + baja.tau_s/baja.r_s);
-    // res.slipping = abs(res.F_f) > N*baja.mu_b;
-    res.slipping = false;
     
-    // New no-slip condition:
-    // T0 > T1*exp(alpha*mu_b/sin(phi))
-    // T1 = F_f + T0
-    // T0 > (F_f + T0)*exp(alpha*mu_b/sin(phi))
-    // T0 > F_f*exp(alpha*mu_b/sin(phi)) + T0*exp(alpha*mu_b/sin(phi))
-    // T0*(1 - exp(alpha*mu_b/sin(phi))) > F_f*exp(alpha*mu_b/sin(phi))
-    // T0*(exp(-alpha*mu_b/sin(phi)) - 1) > F_f
-    // F_f = min(F_f, T0*(exp(-alpha*mu_b/sin(phi)) - 1))
-    
-    // res.F_f = res.slipping ? (sign(res.F_f)*std::max(0.0, N*baja.mu_b_k)) : res.F_f; // ensuring sign is preserved when constraining value
+    // double F_f_max = baja.F_f_max();
+    // if (F_f_max < 0) F_f_max = 0;
+    // res.slipping = abs(res.F_f) > F_f_max; // slip condition: if F_f > F_f_max
+    // res.slipping = baja.omega_p <= baja.rpm_idle*RPM2RADPS; // dumb slip condition: if engine is idling, we slipping
+    res.slipping = false; // dumber slip condition: no slip ever
+    res.F_f = res.slipping ? (sign(res.F_f)*baja.F_f_max()) : res.F_f; // ensuring sign is preserved when constraining value
+
     // To integrate velocity and position, we can use this definition: u = [x, x'], where u' = [x', x'']
     auto integrand = [&res, &baja](Eigen::Vector2d u, double t){
         auto du = Eigen::Vector2d();

@@ -63,7 +63,6 @@ struct BajaState {
     double m_b;         // kg, mass of belt
     double E_b;         // Pa, Young's modulus of belt
     double mu_b;        // Belt static coefficient of friction with sheaves
-    double mu_b_k;      // Belt kinetic coefficient of friction with sheaves
     double I_e;         // kg-m^2, total moment of inertia of spinning engine components
     double I_p;         // kg-m^2, total moment of inertia of primary components
     double I_s;         // kg-m^2, total moment of inertia of secondary components
@@ -185,6 +184,8 @@ struct BajaState {
         return F_f*r_s*N_g/r_wheel;
     }
 
+    double F_f_max() const;
+
     // Sum of all resistance forces on the car:
     // - Rolling resistance
     // - Aerodynamic drag
@@ -192,6 +193,10 @@ struct BajaState {
     // Does NOT include force from gravity.
     double F_total_resist() const;
 };
+
+inline double pretension_hole_to_theta_0_s(int pretension) {
+    return (0.5 + (pretension - 4))*24*DEG2RAD;
+}
 
 constexpr size_t BAJASTATE_SIZE_CHECK = sizeof(BajaState);
 

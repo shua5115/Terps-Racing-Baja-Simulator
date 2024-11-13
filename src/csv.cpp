@@ -19,7 +19,7 @@ static void trim(std::string &s) {
     ltrim(s);
 }
 
-std::vector<std::vector<std::string>> read_csv(std::istream &stream) {
+std::vector<std::vector<std::string>> read_csv(std::istream &stream, std::map<std::string, size_t> *header) {
     std::vector<std::vector<std::string>> data;
     std::string line;
     while(std::getline(stream, line)) {
@@ -39,6 +39,14 @@ std::vector<std::vector<std::string>> read_csv(std::istream &stream) {
             }
             if (it == line.end()) break;
         }
+    }
+    if (header != nullptr && data.size() > 0) {
+        header->clear();
+        const auto &row = data.at(0);
+        for(size_t i = 0; i < row.size(); i++) {
+            header->insert({row.at(i), i});
+        }
+        data.erase(data.begin());
     }
     return data;
 }

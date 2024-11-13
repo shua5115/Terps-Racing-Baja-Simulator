@@ -158,7 +158,7 @@ void vehicle_sim_test() {
     
     long long sim_time_ns = 0;
 
-    printf("t, x, v, ratio, omega_p, tau_s, F_f_noslip, N_p, slipping\n");
+    printf("t, x, v, ratio, omega_p, tau_s, F_f_noslip, F_f_max, slipping\n");
     for(size_t i = 0; i <= N; i++) {
         double t = i*dt;
         auto start = std::chrono::high_resolution_clock::now();
@@ -167,7 +167,7 @@ void vehicle_sim_test() {
         auto dur = finish - start;
         sim_time_ns += dur.count();
         printf("%f, %f, %f, %f, %f, %f, %f, %f, %d\n",
-            t, baja.x, baja.v, baja.r_s/baja.r_p, baja.omega_p, baja.tau_s, (baja.tau_e()/baja.r_p + baja.tau_s/baja.r_s), (baja.F_flyarm() - baja.F_sp())/cos(baja.phi), (int) res.slipping);
+            t, baja.x, baja.v, baja.r_s/baja.r_p, baja.omega_p, baja.tau_s, (baja.tau_e()/baja.r_p + baja.tau_s/baja.r_s), baja.F_f_max(), (int) res.slipping);
     }
     printf("Total time: %lld ms, average time per step: %f ms\n", sim_time_ns/1000, (sim_time_ns/(N+1))*1e-6);
 }

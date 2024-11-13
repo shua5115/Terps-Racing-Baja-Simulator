@@ -28,6 +28,12 @@ src/test_csv.cpp
 src/csv.cpp
 )
 
+add_executable(opt_accuracy
+src/opt_accuracy.cpp
+src/csv.cpp
+${model_src}
+)
+
 add_executable(shift_visualizer
 src/shift_visualizer.cpp
 src/orbitcam.cpp

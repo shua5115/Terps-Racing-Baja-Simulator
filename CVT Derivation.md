@@ -306,27 +306,27 @@ $T_0 = E_b A_b * ((r_p\alpha + r_s\beta + 2\sqrt{L^2 - (r_p - r_s)^2})/L_{b0} - 
 
 A common formula for V-belts is the maximum amount of tension before the belt slips:
 
-$T_0 = T_1 \exp(\alpha \mu_b/\sin(\phi))$
+$T_1 = T_0 \exp(\alpha \mu_b/\sin(\phi))$
 
 Converting this into a condition for no slip:
 
-$T_0 > T_1 \exp(\alpha \mu_b/\sin(\phi))$
+$T_1 > T_0 \exp(\alpha \mu_b/\sin(\phi))$
 
 Using this relation to isolate $T_0$ and $F_f$:
 
 $T_1 = F_f + T_0$
 
-$T_0 > (F_f + T_0) \exp(\alpha \mu_b/\sin(\phi))$
+$T_0 > (F_f + T_0) \exp(-\alpha \mu_b/\sin(\phi))$
 
-$T_0 > F_f \exp(\alpha \mu_b/\sin(\phi)) + T_0 \exp(\alpha \mu_b/\sin(\phi))$
+$T_0 > F_f \exp(-\alpha \mu_b/\sin(\phi)) + T_0 \exp(-\alpha \mu_b/\sin(\phi))$
 
-$T_0 (1 - \exp(\alpha \mu_b/\sin(\phi))) > F_f \exp(\alpha \mu_b/\sin(\phi))$
+$T_0 (1 - \exp(-\alpha \mu_b/\sin(\phi))) > F_f \exp(-\alpha \mu_b/\sin(\phi))$
 
-$T_0 (\exp(-\alpha \mu_b/\sin(\phi)) - 1) > F_f$
+$T_0 (\exp(\alpha \mu_b/\sin(\phi)) - 1) > F_f$
 
 In this form, we can obtain constrained version of F_f:
 
-$F_f = \min(F_f, T_0 (\exp(-\alpha \mu_b/\sin(\phi)) - 1))$
+$F_f = \min(F_f, T_0 (\exp(\alpha \mu_b/\sin(\phi)) - 1))$
 
 However, this form requires knowing the value of $T_0$.
 The constant belt length assumption allows solving CVT equilibrium without knowing $T_0$.
@@ -363,17 +363,17 @@ $T_0 = \frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\cos(\alpha/2 - \pi/2)} - \fr
 
 Plugging into no-slip equation:
 
-$(\frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\cos(\alpha/2 - \pi/2)} - \frac{F_f \alpha \cos(\alpha/2 - \pi/2)}{2\alpha\cos(\alpha/2 - \pi/2)}) (\exp(-\alpha \mu_b/\sin(\phi)) - 1) > F_f$
+$(\frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\cos(\alpha/2 - \pi/2)} - \frac{F_f \alpha \cos(\alpha/2 - \pi/2)}{2\alpha\cos(\alpha/2 - \pi/2)}) (\exp(\alpha \mu_b/\sin(\phi)) - 1) > F_f$
 
 Isolating $F_f$ on one side of the inequality:
 
-$(\frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\cos(\alpha/2 - \pi/2)}) (\exp(-\alpha \mu_b/\sin(\phi)) - 1) > F_f (1 + \frac{\alpha\cos(\alpha/2-\pi/2)}{2\alpha\cos(\alpha/2 - \pi/2)} (\exp(-\alpha \mu_b/\sin(\phi)) - 1))$
+$(\frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\cos(\alpha/2 - \pi/2)}) (\exp(\alpha \mu_b/\sin(\phi)) - 1) > F_f (1 + \frac{\alpha\cos(\alpha/2-\pi/2)}{2\alpha\cos(\alpha/2 - \pi/2)} (\exp(\alpha \mu_b/\sin(\phi)) - 1))$
 
-$(\frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\cos(\alpha/2 - \pi/2)}) (\exp(-\alpha \mu_b/\sin(\phi)) - 1) > F_f (1 + \frac{1}{2} (\exp(-\alpha \mu_b/\sin(\phi)) - 1))$
+$(\frac{F_{bp}\tan(\phi)\sin(\alpha/2)}{\alpha\sin(\alpha/2)}) (\exp(\alpha \mu_b/\sin(\phi)) - 1) > F_f (1 + \frac{1}{2} (\exp(\alpha \mu_b/\sin(\phi)) - 1))$
 
-$(F_{bp}\tan(\phi)\sin(\alpha/2)) (\exp(-\alpha \mu_b/\sin(\phi)) - 1) > F_f \alpha\cos(\alpha/2 - \pi/2) (1 + \frac{1}{2} (\exp(-\alpha \mu_b/\sin(\phi)) - 1))$
+$(F_{bp}\tan(\phi)\sin(\alpha/2)) (\exp(\alpha \mu_b/\sin(\phi)) - 1) > F_f \alpha\sin(\alpha/2) (0.5 + 0.5 \exp(\alpha \mu_b/\sin(\phi)))$
 
-$\frac{(F_{bp}\tan(\phi)\sin(\alpha/2)) (\exp(-\alpha \mu_b/\sin(\phi)) - 1)}{\alpha\cos(\alpha/2 - \pi/2) (1 + \frac{1}{2} (\exp(-\alpha \mu_b/\sin(\phi)) - 1))} > F_f$
+$\frac{(F_{bp}\tan(\phi)) (\exp(\alpha \mu_b/\sin(\phi)) - 1)}{0.5 \alpha (1 + \exp(\alpha \mu_b/\sin(\phi)))} > F_f$
 
 
 # Constant Belt Length Assumption
@@ -680,7 +680,8 @@ $\tau_s = \frac{r_{wheel}}{N_g} (s_{resist} F_{resist} + m_{car}g\sin(\theta_{hi
 
 - Evaluate fitness of shift curve by optimizing SSE
 - Tune accuracy of system by optimizing the sum of SSE optimizations for all test cases
-
+- Test time response of CVT on dyno by using step input of clamping force
+    - Use hydraulic actuation on sheaves directly
 
 # References
 

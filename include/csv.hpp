@@ -6,7 +6,7 @@
 #include <istream>
 #include <map>
 
-std::vector<std::vector<std::string>> read_csv(std::istream &stream);
+std::vector<std::vector<std::string>> read_csv(std::istream &stream, std::map<std::string, size_t> *header = nullptr);
 
 // Reads a racecapture log for a set of named columns.
 // Only logs rows when all columns have data
@@ -29,7 +29,7 @@ std::vector<std::array<double, N>> read_rc_log(std::istream &stream, const std::
         for (size_t j = 0; j < N; j++) {
             const auto testname = colnames.at(j);
             if (line == testname) {
-                indices.at(head_index) = j;
+                indices[head_index] = j;
                 break;
             }
         }
@@ -48,9 +48,15 @@ std::vector<std::array<double, N>> read_rc_log(std::istream &stream, const std::
             }
         }
         // check if any values are NaN
-        if (std::find(row.begin(), row.end(), NAN) == row.end()) {
-            data.push_back(row);
+        bool hasnan = false;
+        for(const double val : row) {
+            if (isnan(val)) {
+                hasnan = true;
+                break;
+            }
         }
+        if (hasnan) continue;
+        data.push_back(row);
     }
     
     return data;

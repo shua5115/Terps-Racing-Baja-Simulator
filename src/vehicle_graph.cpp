@@ -23,6 +23,9 @@ std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
         threads.emplace_back([&data, N, M, i, dt](){
             BajaState baja = TR24_GAGED_GX9;
             baja.controls.throttle = 1;
+            // baja.shift_speed = 68.2867; // from accuracy optimizer
+            baja.shift_speed = 25;
+            baja.F_resist = 0;
             baja.omega_p = 1800*RPM2RADPS;
             double t = 0;
 

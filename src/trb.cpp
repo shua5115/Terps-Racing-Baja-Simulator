@@ -348,11 +348,12 @@ BajaDynamicsResult trb_sim_step(BajaState &baja, double dt) {
     // Linear interpolation: x = x_n + (x_n-1 - x_n)*T, where T is a value from 0-1
     // T = exp(-Kdt), where K is a positive coefficient
     // This makes d_p 
-    // shift_speed = 0.5 -> proportion is e^-dt/2 (slower decay)
+    // shift_speed = 0 -> proportion is 1, no shifting!
+    // shift_speed = 0.5 -> proportion is e^-dt/2 (slower shifting)
     // shift_speed = 1 -> proportion is e^-dt 
-    // shift_speed = 2 -> proportion is e^-2dt (faster decay)
-    // shift_speed = 10 -> e^-10dt (even faster decay)
-    d_p = d_p + (baja.d_p - d_p)*std::min(exp(-baja.shift_speed*dt), 1.0);
+    // shift_speed = 2 -> proportion is e^-2dt (faster shifting)
+    // shift_speed = 10 -> e^-10dt (even faster shifting)
+    d_p = d_p + (baja.d_p - d_p)*clamp(exp(-baja.shift_speed*dt), 0.0, 1.0);
     baja.set_ratio_from_d_p(d_p);
     // 4. Vehicle dynamics
     auto res = solve_dynamics(baja, dt);

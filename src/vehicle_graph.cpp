@@ -12,19 +12,20 @@ std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
     std::vector<Eigen::MatrixXd> data;
     data.resize(6, Eigen::MatrixXd());
 
-    double dt = 0.02;
+    double dt = 0.001;
     double tf = 10;
-    size_t M = floor(tf/dt) + 1;
+    size_t data_reduction = 100;
+    size_t M = ((size_t)floor(tf/dt) + 1)/data_reduction;
 
     for(auto &d : data) {
         d.resize(N, M);
     }
     for(unsigned int i = 0; i < N; i++) {
-        threads.emplace_back([&data, N, M, i, dt](){
+        threads.emplace_back([&data, N, M, i, dt, data_reduction](){
             BajaState baja = TR24_GAGED_GX9;
             baja.controls.throttle = 1;
             // baja.shift_speed = 68.2867; // from accuracy optimizer
-            baja.shift_speed = 25;
+            baja.shift_speed = 0.5;
             baja.F_resist = 0;
             baja.omega_p = 1800*RPM2RADPS;
             double t = 0;
@@ -32,8 +33,11 @@ std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
             baja.theta_hill = remap(i, 0, N-1, 0, 45*DEG2RAD);
 
             for(unsigned int j = 0; j < M; j++) {
-                t = j*dt;
-                auto dyn = trb_sim_step(baja, dt);
+                BajaDynamicsResult dyn;
+                t = (j*data_reduction)*dt;
+                for(unsigned int k = 0; k < data_reduction; k++) {
+                    dyn = trb_sim_step(baja, dt);
+                }
                 data[0](i, j) = t;
                 data[1](i, j) = dyn.x;
                 data[2](i, j) = dyn.v;

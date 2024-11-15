@@ -78,7 +78,8 @@ int main(int argc, char **argv) {
     std::vector<double> initial_engine_rpms(N_tunes, 0.0);
     std::vector<double> initial_wheel_rpms(N_tunes, 0.0);
     std::vector<double> initial_d_p(N_tunes, 0.0);
-    std::vector<double> durations(N_tunes, 0.0);
+    std::vector<double> t_start_ms(N_tunes, 0.0);
+    std::vector<double> t_end_ms(N_tunes, 0.0);
     std::vector<std::vector<std::array<double, 3>>> datasets;
     datasets.reserve(N_tunes);
 
@@ -93,9 +94,8 @@ int main(int argc, char **argv) {
         state.cvt_tune.kappa_s = atof(row.at(kappa_s_index).c_str())*(LBF2N*IN2M*RAD2DEG); // lb-in/deg to N-m/rad
         state.cvt_tune.theta_helix = atof(row.at(theta_helix_index).c_str())*DEG2RAD;
         state.cvt_tune.theta_s_0 = pretension_hole_to_theta_0_s((int) atof(row.at(pretension_index).c_str()));
-        double t_start_ms = atof(row.at(t_start_index).c_str());
-        double t_end_ms = atof(row.at(t_end_index).c_str());
-        durations[i] = (t_end_ms - t_start_ms)*1e-3;
+        t_start_ms[i] = atof(row.at(t_start_index).c_str());
+        t_end_ms[i] = atof(row.at(t_end_index).c_str());
 
         path datapath = folderpath / row.at(logfile_index);
         std::ifstream logfile(datapath);
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
         logfile.close();
 
         // find first row where the time is greater than or equal to start time
-        auto start_row_it = std::find_if(dataset.begin(), dataset.end(), [t_start_ms](const std::array<double, 3> &elem){ return elem[0] >= t_start_ms; });
+        auto start_row_it = std::find_if(dataset.begin(), dataset.end(), [&t_start_ms, i](const std::array<double, 3> &elem){ return elem[0] >= t_start_ms[i]; });
 
         // set the initial conditions of the state based on collected data
         if (start_row_it != dataset.end()) {
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
                 return state.r_s/state.r_p - target_ratio;
             }, 0, state.d_p_max, 20);
         } else {
-            std::cerr << "File " << row.at(logfile_index) << " does not contain data at its indicated start time of " << t_start_ms << " ms." << "\n";
+            std::cerr << "File " << row.at(logfile_index) << " does not contain data at its indicated start time of " << t_start_ms[i] << " ms." << "\n";
             exit(1);
         }
 
@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
         // Filter dataset for bad values
         while(start_row_it != dataset.end()) {
             auto &row = *start_row_it;
-            if (row.at(0) > t_end_ms) break;
+            if (row.at(0) > t_end_ms[i]) break;
             // If the engine rpm is below idle, this is a sensor error and we should interpolate using the average of the adjacent values instead.
             if (row.at(1) < state.rpm_idle && i > 0 && i < (dataset.size()-1)) {
                 row[1] = 0.5*(dataset.at(i-1).at(1) + dataset.at(i+1).at(1));
@@ -146,8 +146,10 @@ int main(int argc, char **argv) {
     }
 
     Eigen::Vector2d lower_bound(0.0, 0.0);
-    Eigen::Vector2d upper_bound(200.0, INFINITY);
-    Eigen::Vector2d x0(0, 50); // set from previous runs to reduce iteration time
+    Eigen::Vector2d upper_bound(100.0, 20.0);
+    Eigen::Vector2d x0(TR24_GAGED_GX9.F_resist, TR24_GAGED_GX9.shift_speed);
+    const char *name1 = "F_resist";
+    const char *name2 = "shift_speed";
 
     // The objective function measures the difference between the measured data and sim data.
     // The optimizer will attempt to reduce the difference as much as possible.
@@ -161,7 +163,8 @@ int main(int argc, char **argv) {
             auto &baja = states.at(i);
             // Adjust state tune based on variables
             baja.F_resist = clamp(x(0), lower_bound(0), upper_bound(0));
-            baja.shift_speed = clamp(x(1), lower_bound(1), upper_bound(1));
+            baja.m_car = clamp(x(1), lower_bound(1), upper_bound(1));
+            baja.shift_speed = 0.5;
             // Initialize sim state from data
             baja.omega_p = initial_engine_rpms[i]*RPM2RADPS;
             baja.v = initial_wheel_rpms[i]*RPM2RADPS*baja.r_wheel;
@@ -169,31 +172,35 @@ int main(int argc, char **argv) {
             // Isolate this thread's variables
             auto &dataset = datasets.at(i);
             auto &sim_error = error_vals.at(i); // this is a reference to the error val this thread will overwrite
-            double t_final = durations.at(i);
+            double t_start = t_start_ms[i];
+            double t_end = t_end_ms[i];
+            // double t_final = durations.at(i);
             // create a thread to simulate the vehicle for <duration> seconds
-            threads.emplace_back([&baja, &sim_error, &dataset, t_final](){
-                size_t N_iters = (size_t) (t_final/sim_dt) + 1;
-                double t = 0, t_prev = 0;
-                size_t dataset_i = 1;
+            threads.emplace_back([&baja, &sim_error, &dataset, t_start, t_end](){
                 double sum_errors = 0;
-                for(size_t iters = 0; iters < N_iters; iters++) {
-                    t = std::min(t+sim_dt, t_final);
-                    double dt = t - t_prev; // the last timestep may not equal sim_dt
-                    if (dt == 0) break;
-                    auto step = trb_sim_step(baja, dt);
-                    while (dataset.at(dataset_i).at(0)*1e-3 <= t && dataset_i < dataset.size()) {
-                        dataset_i++;
+                size_t r = 0;
+                while (dataset.at(r).at(0) < t_start) {
+                    r++;
+                }
+                while(dataset.at(r+1).at(0) < t_end) {
+                    auto row = dataset.at(r);
+                    auto row_next = dataset.at(r+1);
+                    double row_dt = (row_next.at(0) - row.at(0))*1e-3;
+                    size_t N_iters = (size_t) (row_dt/sim_dt) + 1;
+                    double t = 0, t_prev = 0;
+                    for(size_t iters = 0; iters < N_iters; iters++) {
+                        t = std::min(t+sim_dt, row_dt);
+                        double dt = t - t_prev; // the last timestep may not equal sim_dt
+                        if (dt == 0) break;
+                        auto step = trb_sim_step(baja, dt);
+                        t_prev = t;
                     }
-                    // linearly interpolate dataset for in-between points
-                    auto &prev = dataset.at(dataset_i-1);
-                    auto &next = dataset.at(dataset_i);
-                    double interp = invlerp(prev.at(0)*1e-3, next.at(0)*1e-3, t); // dataset times are in ms, t is in s
-                    double real_omega_p = lerp(prev.at(1), next.at(1), interp)*RPM2RADPS;
-                    double real_v = lerp(prev.at(2), next.at(2), interp)*RPM2RADPS*baja.r_wheel;
-                    double err = abs(real_omega_p - step.omega_p) + abs(real_v - step.v);
-                    err *= dt; // scale error by the timestep for timestep-independent error scales
+                    double real_omega_p = row_next.at(1)*RPM2RADPS;
+                    double real_v = row_next.at(2)*RPM2RADPS*baja.r_wheel;
+                    double err = abs(real_omega_p - baja.omega_p) + abs(real_v - baja.v);
+                    err *= row_dt; // scale error by the timestep for timestep-independent error scales
                     sum_errors += err;
-                    t_prev = t;
+                    r++;
                 }
                 sim_error = sum_errors;
             });
@@ -205,7 +212,7 @@ int main(int argc, char **argv) {
             if (thread.joinable()) thread.join();
             error_grand_total += error_vals.at(i);
         }
-        printf("F_resist=%.2f, shift_speed=%.2e -> error=%.6e\n", x(0), x(1), error_grand_total);
+        printf("%s=%.2f, %s=%.2e -> error=%.6e\n", name1, x(0), name2, x(1), error_grand_total);
         return error_grand_total;
     };
 
@@ -219,8 +226,8 @@ int main(int argc, char **argv) {
     auto results_file = std::ofstream(results_path);
 
     if (results_file) {
-        results_file << "F_resist," << opt_results.x(0) << "\n";
-        results_file << "shift_speed," << opt_results.x(1) << "\n";
+        results_file << name1 << "," << opt_results.x(0) << "\n";
+        results_file << name2 << "," << opt_results.x(1) << "\n";
         results_file << "error," << opt_results.f_of_x << "\n";
         results_file << "converged," << (opt_results.converged ? "True" : "False") << "\n";
         results_file << "iterations," << opt_results.iterations << "\n";

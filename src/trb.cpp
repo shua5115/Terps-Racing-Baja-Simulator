@@ -324,6 +324,7 @@ BajaDynamicsResult solve_dynamics(const BajaState &baja, double dt) {
     } else {
         // Integrate omega_p by treating the primary as a separate rigid body
         res.omega_p = baja.omega_p + dt*(baja.tau_e() - res.F_f*baja.r_p)/(baja.I_e + baja.I_p); // Explicit euler b/c this acceleration is constant
+        res.omega_p = std::min(baja.rpm_gov*RPM2RADPS, res.omega_p);
     }
     
     return res;

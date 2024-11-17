@@ -216,7 +216,7 @@ const Eigen::MatrixX2d CH440_TORQUE_CURVE = Eigen::MatrixX2d({
     {3200, 25.7},
     {3400, 24.8},
     {3600, 23.9},
-    {3800, 23.9}, // Governor prevents torque increase above 3800, need to verify behavior
+    {3800, 0}, // Governor prevents torque increase above 3800, need to verify behavior
 });
 
 // Solves for theta1 and theta2 of the flyweight assembly.

@@ -10,7 +10,7 @@ std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
     std::vector<std::thread> threads;
     threads.reserve(N);
     std::vector<Eigen::MatrixXd> data;
-    data.resize(6, Eigen::MatrixXd());
+    data.resize(7, Eigen::MatrixXd());
 
     double dt = 0.001;
     double tf = 10;
@@ -24,13 +24,16 @@ std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
         threads.emplace_back([&data, N, M, i, dt, data_reduction](){
             BajaState baja = TR24_GAGED_GX9;
             baja.controls.throttle = 1;
-            // baja.shift_speed = 68.2867; // from accuracy optimizer
-            baja.shift_speed = 0.5;
-            baja.F_resist = 0;
+            
+            // change these lines to change initial conditions for each run
+            // baja.shift_speed = 0.75;
+            baja.F_resist = 20*LBF2N;
             baja.omega_p = 1800*RPM2RADPS;
             double t = 0;
 
-            baja.theta_hill = remap(i, 0, N-1, 0, 45*DEG2RAD);
+            // change these lines to change a specific variable between runs
+            // baja.theta_hill = remap(i, 0, N-1, 0, 45*DEG2RAD);
+            baja.shift_speed = remap(i, 0, N-1, 0.5, 5.0);
 
             for(unsigned int j = 0; j < M; j++) {
                 BajaDynamicsResult dyn;
@@ -41,9 +44,10 @@ std::vector<Eigen::MatrixXd> gen_data(unsigned int N) {
                 data[0](i, j) = t;
                 data[1](i, j) = dyn.x;
                 data[2](i, j) = dyn.v;
-                data[3](i, j) = dyn.omega_p;
+                data[3](i, j) = dyn.omega_p*RADPS2RPM;
                 data[4](i, j) = baja.r_s/baja.r_p;
                 data[5](i, j) = baja.theta_hill;
+                data[6](i, j) = baja.shift_speed;
             }
         });
     }
@@ -116,6 +120,16 @@ int main() {
                 config.title = "v, omega_p vs. time";
                 config.axis_labels = {"v", "omega_p", "time"};
                 draw_labels = DrawScatterPlot3D(data[2], data[3], data[0], {0, 0, 0}, {10, 4, 10}, cam, config);
+                break;
+            case 4:
+                config.title = "omega_p vs. time";
+                config.axis_labels = {"time", "time", "omega_p"};
+                draw_labels = DrawScatterPlot3D(data[0], data[0], data[3], {0, 0, 0}, {10, 4, 10}, cam, config);
+                break;
+            case 5:
+                config.title = "omega_p vs. time, shift_speed";
+                config.axis_labels = {"time", "shift speed", "omega_p"};
+                draw_labels = DrawScatterPlot3D(data[0], data[6], data[3], {0, 0, 0}, {10, 4, 10}, cam, config);
                 break;
         }
         EndMode3D();

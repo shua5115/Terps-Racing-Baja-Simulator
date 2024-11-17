@@ -7,7 +7,7 @@ The sim is intended to be a tool to predict vehicle performance when changing de
 
 shift_visualizer: Graphs CVT shift curves with respect to hill angle
 
-vehicle_graph: Graphs, engine speed, vehicle speed, and position with respect to time
+vehicle_graph: Graphs engine speed, vehicle speed, and position with respect to time
 
 test: Unit tests for various functions of the simulator, ensuring accuracy and correctness
 
@@ -32,8 +32,6 @@ sudo apt install build-essential cmake
 ```
 
 ### Building with CMake
-
-Once CMake and a C++ compiler are instaleld, the steps for building are the same.
 
 #### Using Command Prompt
 

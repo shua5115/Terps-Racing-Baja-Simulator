@@ -3,6 +3,11 @@
 This repo contains a powertrain simulation for the Terps Racing Baja vehicle.
 The sim is intended to be a tool to predict vehicle performance when changing design parameters, such as CVT tune and gear ratio.
 
+## Theory
+
+All equations used for this project are derived in the document [CVT Derivation.md](CVT%20Derivation.md).
+Free body diagrams, rigid body equations of motion, algebra, and calculus are used to derive the governing equations for the simulation.
+
 ## Applications
 
 shift_visualizer: Graphs CVT shift curves with respect to hill angle
@@ -49,3 +54,13 @@ making the programs run much faster, while still allowing the program to be insp
 
 Open this folder in VS code and install the C++ and CMake extensions from Microsoft.
 With these extensions, you can build the project using the GUI.
+
+## Dependencies
+
+This project uses these great open-source libraries. Check them out!
+
+### [Eigen 3.4](https://eigen.tuxfamily.org)
+Eigen is a linear algebra library.
+
+### [Raylib 5.0](https://github.com/raysan5/raylib/)
+Raylib is a library which simplifies making graphical applications in C/C++.

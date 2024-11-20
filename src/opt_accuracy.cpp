@@ -1,3 +1,13 @@
+/*
+ * Usage: opt_accuracy <tunes_folder> <tunes_csv_filename>
+ * - tunes_folder: folder containing CSV data for accel runs
+ * - tunes_csv_filename: cssv file within the tunes_folder with metadata about each of the runs (see the example file for layout)
+ * tunes_folder by default = "../../data/tunes", which selects the tunes in this repository if building into a folder
+ * - This works because CMake will place the executable into a folder "build/<build-type>/opt_accuracy.exe"
+ *   Going back two folders reaches the root of the repository, where the data/tunes folders exist.
+ * tunes_csv_filename by default = "tunes.csv"
+ */
+
 #include <iostream>
 #include <vector>
 #include <fstream>

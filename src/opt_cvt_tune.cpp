@@ -32,15 +32,17 @@ struct AccelResult {
 };
 
 int main() {
-    using V = Eigen::Vector<double, 5>;
-    
-    std::array<const char *, 3> k_p_names = {"black", "orange", "purple"};
+    // These arrays dictate the available values for each of the CVT tune variables.
+    // This program will brute force every possible combination of the variables to see which produces the fastest time in hill climb or accel.
+
+    // black, orange, purple
     std::array<double, 3> k_p = {45, 60, 80}; // lbf/in
 
     // We have 11 x 35g, 5 x 56g, 12 x 67g weights
+    // we are also introducing intermediate values to see if we should manufacture different weights
     constexpr std::array<double, 7> m_fly = {8*35, 4*35 + 4*56, 4*56 + 4*67, 503, 514, 525, 8*67};
 
-    std::array<const char *, 2> k_s_names = {"yellow", "red"};
+    // yellow, red
     std::array<double, 2> k_s = {22.75, 14.65}; // lbf/in
     std::array<double, 2> kappa_s = {0.4644, 0.592}; // lbf-in/deg
 

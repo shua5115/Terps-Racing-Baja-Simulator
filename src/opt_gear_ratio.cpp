@@ -1,4 +1,10 @@
-// The gear ratio optimizer does not use CVT dynamics.
+/*
+ * The gear ratio optimizer does not use physical CVT dynamics.
+ * We assume that the engine is always running at a fixed RPM, and that the CVT ratio adjusts itself to maintain that engine RPM.
+ * To evaluate the "badness" of the design gear ratio and fixed engine RPM, we time the car running accel and hill climb.
+ * The "badness" is a weighted sum of the two times, weighted by how "important" either event is relatively.
+ * The optimal gear ratio and fixed rpm is obtained by minimizing the "badness" value using gradient descent.
+ */
 
 #include <iostream>
 #include "trb.hpp"
@@ -6,7 +12,6 @@
 #define sim_dt (1e-4)
 
 void sim_step(BajaState &baja, double dt, double fixed_engine_rpm, double hill_deg, Eigen::Vector2d ratio_limits) {
-    BajaDynamicsResult res = {0};
     double fixed_omega_p = fixed_engine_rpm*RPM2RADPS;
     baja.theta_hill = hill_deg*DEG2RAD;
     // To integrate velocity and position, we can use this definition: u = [x, x'], where u' = [x', x'']
@@ -17,7 +22,7 @@ void sim_step(BajaState &baja, double dt, double fixed_engine_rpm, double hill_d
         double omega_wheel = v/baja.r_wheel;
         double omega_s = omega_wheel*baja.N_g;
         double ratio = clamp(fixed_omega_p/omega_s, ratio_limits(0), ratio_limits(1));
-        if (!isfinite(ratio)) ratio = ratio_limits(1);
+        if (!isfinite(ratio)) ratio = ratio_limits(1); // at t=0, omega_s=0, so ratio will be infinity. This line prevents pesky NaNs...
         double tau_e = matrix_linear_lookup(baja.engine_torque_curve, fixed_engine_rpm);
         double tau_s = tau_e*ratio;
 
@@ -29,12 +34,9 @@ void sim_step(BajaState &baja, double dt, double fixed_engine_rpm, double hill_d
         return du;
     };
     Eigen::Vector2d u = runge_kutta_4_step<double, 2>(integrand, Eigen::Vector2d(baja.x, baja.v), 0, dt);
-    res.x = u(0);
-    res.v = u(1);
-    
     baja.omega_p = fixed_omega_p;
-    baja.x = res.x;
-    baja.v = res.v;
+    baja.x = u(0);
+    baja.v = u(1);
 }
 
 double objective(Eigen::Vector2d u) {

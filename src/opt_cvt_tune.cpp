@@ -9,7 +9,7 @@
 
 #define sim_dt (1e-3)
 
-double accel_run_time(CVTTune tune, float hill_deg) {
+double accel_run_time(CVTTune tune, double hill_deg) {
     // Set up vehicle state
     BajaState baja = TR24_GAGED_GX9;
     baja.omega_p = RPM2RADPS*baja.rpm_idle;

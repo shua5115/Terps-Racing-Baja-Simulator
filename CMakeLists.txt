@@ -39,6 +39,11 @@ src/opt_cvt_tune.cpp
 ${model_src}
 )
 
+add_executable(opt_gear_ratio
+src/opt_gear_ratio.cpp
+${model_src}
+)
+
 add_executable(shift_visualizer
 src/shift_visualizer.cpp
 src/orbitcam.cpp

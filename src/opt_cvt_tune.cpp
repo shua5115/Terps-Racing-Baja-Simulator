@@ -9,10 +9,11 @@
 
 #define sim_dt (1e-3)
 
-double accel_run_time(CVTTune tune) {
+double accel_run_time(CVTTune tune, float hill_deg) {
     // Set up vehicle state
     BajaState baja = TR24_GAGED_GX9;
     baja.omega_p = RPM2RADPS*baja.rpm_idle;
+    baja.theta_hill = hill_deg*DEG2RAD;
     baja.controls.throttle = 1;
     baja.cvt_tune = tune;
 
@@ -26,7 +27,8 @@ double accel_run_time(CVTTune tune) {
 
 struct AccelResult {
     CVTTune tune;
-    double time;
+    double accel_time;
+    double hill_time;
 };
 
 int main() {
@@ -36,13 +38,13 @@ int main() {
     std::array<double, 3> k_p = {45, 60, 80}; // lbf/in
 
     // We have 11 x 35g, 5 x 56g, 12 x 67g weights
-    std::array<double, 4> m_fly = {8*35, 4*35 + 4*56, 4*56 + 4*67, 8*67};
+    constexpr std::array<double, 7> m_fly = {8*35, 4*35 + 4*56, 4*56 + 4*67, 503, 514, 525, 8*67};
 
     std::array<const char *, 2> k_s_names = {"yellow", "red"};
     std::array<double, 2> k_s = {22.75, 14.65}; // lbf/in
     std::array<double, 2> kappa_s = {0.4644, 0.592}; // lbf-in/deg
 
-    std::array<double, 8> theta_helix = {24,28,32,33,36,38,40,42}; // deg
+    std::array<double, 6> theta_helix = {28,32,33,36,38,40}; // deg
     std::array<double, 4> pretension = {4,5,6,7};
 
     constexpr size_t combos = k_p.size()*m_fly.size()*k_s.size()*theta_helix.size()*pretension.size();
@@ -69,8 +71,8 @@ int main() {
                             printf("Starting run %llu/%llu\n", combo+subcombo, combos);
                             AccelResult &result = results.at(combo+subcombo);
                             result.tune = tune;
-                            double t = accel_run_time(tune);
-                            result.time = t;
+                            result.accel_time = accel_run_time(tune, 0);
+                            result.hill_time = accel_run_time(tune, 30);
                             subcombo++;
                         }
                     }
@@ -87,14 +89,24 @@ int main() {
         combo++;
     }
 
-    AccelResult best = {.time = INFINITY};
-    AccelResult worst = {.time = 0};
+    constexpr double accel_importance = 10.0;
+    constexpr double hill_importance = 1.0;
+    auto objective = [=](AccelResult res){
+        return res.accel_time*accel_importance + res.hill_time*hill_importance;
+    };
+    double best_val = INFINITY;
+    double worst_val = 0;
+    AccelResult best;
+    AccelResult worst;
     for(const auto &result : results) {
-        if(result.time < best.time) {
+        double f = objective(result);
+        if(f < best_val) {
             best = result;
+            best_val = f;
         }
-        if(result.time > worst.time) {
+        if(f > worst_val) {
             worst = result;
+            worst_val = f;
         }
     }
 
@@ -105,13 +117,15 @@ int main() {
         "k_s: %f lbf/in\n"
         "helix: %f deg\n"
         "pretension: %f\n"
-        "time: %f s\n\n",
+        "accel time: %f s\n"
+        "hill time: %f s\n\n",
         worst.tune.k_p/(LBF2N/IN2M),
         worst.tune.m_fly*1e3,
         worst.tune.k_s/(LBF2N/IN2M),
         worst.tune.theta_helix*RAD2DEG,
         (worst.tune.theta_s_0/(24*DEG2RAD) - 0.5 + 4),
-        worst.time
+        worst.accel_time,
+        worst.hill_time
     );
 
     printf(
@@ -121,12 +135,14 @@ int main() {
         "k_s: %f lbf/in\n"
         "helix: %f deg\n"
         "pretension: %f\n"
-        "time: %f s\n\n",
+        "accel time: %f s\n"
+        "hill time: %f s\n\n",
         best.tune.k_p/(LBF2N/IN2M),
         best.tune.m_fly*1e3,
         best.tune.k_s/(LBF2N/IN2M),
         best.tune.theta_helix*RAD2DEG,
         (best.tune.theta_s_0/(24*DEG2RAD) - 0.5 + 4),
-        best.time
+        best.accel_time,
+        best.hill_time
     );
 }

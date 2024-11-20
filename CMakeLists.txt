@@ -34,6 +34,11 @@ src/csv.cpp
 ${model_src}
 )
 
+add_executable(opt_cvt_tune
+src/opt_cvt_tune.cpp
+${model_src}
+)
+
 add_executable(shift_visualizer
 src/shift_visualizer.cpp
 src/orbitcam.cpp

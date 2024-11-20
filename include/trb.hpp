@@ -198,6 +198,8 @@ inline double pretension_hole_to_theta_0_s(int pretension) {
     return (0.5 + (pretension - 4))*24*DEG2RAD;
 }
 
+double primary_ramp_TR24(double x);
+
 constexpr size_t BAJASTATE_SIZE_CHECK = sizeof(BajaState);
 
 // BajaState representing the initial state of the TR24 baja car with an unmodified Gaged GX9 CVT

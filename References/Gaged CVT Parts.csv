@@ -3,6 +3,6 @@
 
 "secondary spring color","yellow","red"
 "k_s (lb/in)",22.75,14.65
-"kappa_s (lb-in/rad)",14.65,0.5920
+"kappa_s (lb-in/deg)",0.4644,0.5920
 
 "theta_helix (deg)",24,28,32,33,36,38,40,42

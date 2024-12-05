@@ -10,13 +10,19 @@ Free body diagrams, rigid body equations of motion, algebra, and calculus are us
 
 ## Applications
 
-shift_visualizer: Graphs CVT shift curves with respect to hill angle
+### test.cpp
+Unit tests for various functions of the simulator, ensuring accuracy and correctness
 
-vehicle_graph: Graphs engine speed, vehicle speed, and position with respect to time
+### opt_accuracy.cpp
+Optimizes simulation accuracy by adjusting "free" variables, and comparing to collected data.
 
-test: Unit tests for various functions of the simulator, ensuring accuracy and correctness
+### shift_visualizer.cpp
+Graphs CVT shift curves with respect to hill angle
 
-opt_accuracy: Optimizes simulation accuracy by adjusting "free" variables, and comparing to collected data
+### vehicle_graph.cpp
+Graphs engine speed, vehicle speed, and position with respect to time
+
+Add racecapture CSV data to `data/tunes` and add row to `data/tunes.csv` to include file in optimization.
 
 ## Building
 

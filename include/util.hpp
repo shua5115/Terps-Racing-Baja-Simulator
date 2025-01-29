@@ -48,16 +48,16 @@ inline double mod_euclid(double i, double n) {
     return fmod(n + fmod(i, n), n);
 }
 
-constexpr double lerp(double a, double b, double t) {
+constexpr double Lerp(double a, double b, double t) {
     return a*(1.0-t) + b*t;
 }
 
-constexpr double invlerp(double a, double b, double v) {
+constexpr double invLerp(double a, double b, double v) {
     return (v-a)/(b-a);
 }
 
 constexpr double remap(double v, double a1, double b1, double a2, double b2) {
-    return lerp(a2, b2, invlerp(a1, b1, v));
+    return Lerp(a2, b2, invLerp(a1, b1, v));
 }
 
 constexpr double clamp(double v, double lo, double hi) {

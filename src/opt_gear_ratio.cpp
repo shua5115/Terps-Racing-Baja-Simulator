@@ -22,7 +22,7 @@ void sim_step(BajaState &baja, double dt, double fixed_engine_rpm, double hill_d
         double omega_wheel = v/baja.r_wheel;
         double omega_s = omega_wheel*baja.N_g;
         double ratio = clamp(fixed_omega_p/omega_s, ratio_limits(0), ratio_limits(1));
-        if (!isfinite(ratio)) ratio = ratio_limits(1); // at t=0, omega_s=0, so ratio will be infinity. This line prevents pesky NaNs...
+        if (!std::isfinite(ratio)) ratio = ratio_limits(1); // at t=0, omega_s=0, so ratio will be infinity. This line prevents pesky NaNs...
         double tau_e = matrix_linear_lookup(baja.engine_torque_curve, fixed_engine_rpm);
         double tau_s = tau_e*ratio;
 

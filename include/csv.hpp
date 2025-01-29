@@ -3,8 +3,10 @@
 #include <vector>
 #include <array>
 #include <string>
-#include <istream>
+#include <iostream>
+#include <sstream>
 #include <map>
+#include <cmath>
 
 std::vector<std::vector<std::string>> read_csv(std::istream &stream, std::map<std::string, size_t> *header = nullptr);
 
@@ -20,6 +22,7 @@ std::vector<std::array<double, N>> read_rc_log(std::istream &stream, const std::
     // headers are in form: "Name"|"units"|min|max|hz,
     // we only care about the "Name" part
     std::stringstream ss(line); // this copies line, so we can overwrite it after this
+    
     for(size_t head_index = 0; std::getline(ss, line, ','); head_index++) {
         auto i = line.find('"', 1); // find second quote
         if (i == std::string::npos) continue; // if second quote doesn't exist, skip
@@ -50,7 +53,7 @@ std::vector<std::array<double, N>> read_rc_log(std::istream &stream, const std::
         // check if any values are NaN
         bool hasnan = false;
         for(const double val : row) {
-            if (isnan(val)) {
+            if (std::isnan(val)) {
                 hasnan = true;
                 break;
             }

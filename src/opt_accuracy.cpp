@@ -13,7 +13,6 @@
 #include <fstream>
 #include <filesystem>
 #include <string.h>
-#include <direct.h>
 #include <thread>
 #include "trb.hpp"
 #include "opt.hpp"
@@ -115,7 +114,7 @@ int main(int argc, char **argv) {
         }
         // Adding a dataset with columns: time, engine_rpm, wheel_rpm
         const std::array<const char *, 3> colnames = {"Interval", row.at(engine_rpm_header_index).c_str(), row.at(wheel_rpm_header_index).c_str()};
-        auto &dataset = datasets.emplace_back(read_rc_log(logfile, colnames));
+        auto &dataset = datasets.emplace_back(read_rc_log<3>(logfile, colnames));
         logfile.close();
 
         // find first row where the time is greater than or equal to start time
